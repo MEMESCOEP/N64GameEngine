@@ -27,7 +27,7 @@ rdpq_font_t *NewFont;
 T3DModel *FloorModel;
 T3DModel *GearModel;
 T3DModel *BushModel;
-T3DVec3 CameraRotationPoint = {{0.0f, 0.0f, 0.0f}};
+T3DVec3 CameraRotationPoint = {{0.0f, -45.0f, 0.0f}};
 T3DVec3 SunDirection = {{-1.0f, 1.0f, 1.0f}};
 color_t SkyColor = (color_t){.r=0x87, .g=0xCE, .b=0xEB, .a=0xFF};
 uint8_t AmbientColor[4] = {80, 80, 100, 0xFF};
@@ -35,8 +35,6 @@ uint8_t SunColor[4] = {0xFD, 0xFB, 0xD3, 0xFF};
 float BushPositions[4][2] = {{-175.0f, -175.0f}, {175.0f, -175.0f}, {-175.0f, 175.0f}, {175.0f, 175.0f}};
 float RotationSpeed = 0.25f;
 float ModelAngle = 0.0f;
-float Gear2Pos = 0.0f;
-float PosChg2 = -10.0f;
 int DebugMode = 1;
 
 
@@ -60,7 +58,8 @@ int main()
     
     // Set up the camera
     CamProps = DefaultCameraProperties;
-    CamProps.Position = (T3DVec3){{0.0f, 0.0f, 100.0f}};
+    CamProps.Position = (T3DVec3){{0.0f, -25.0f, 125.0f}};
+    CamProps.Target = CameraRotationPoint;
     CamProps.FOV = 90.0f;
 
     // Load models and set up transforms
@@ -77,14 +76,14 @@ int main()
     FloorModelTransform.Scale[2] = 1.0f;
 
     GearModelTransform1 = CreateNewModelTransform();
-    GearModelTransform1.Position[2] = 0.0f;
+    GearModelTransform1.Position[1] = -40.0f;
     GearModelTransform1.Scale[0] = 0.2f;
     GearModelTransform1.Scale[1] = 0.2f;
     GearModelTransform1.Scale[2] = 0.2f;
 
     GearModelTransform2 = CreateNewModelTransform();
     GearModelTransform2.Position[0] = 0.0f;
-    GearModelTransform2.Position[1] = -50.0f;
+    GearModelTransform2.Position[1] = -75.0f;
     GearModelTransform2.Position[2] = -125.0f;
     GearModelTransform2.Rotation[0] = 1.5f;
     GearModelTransform2.Rotation[1] = -3.0f;
@@ -93,16 +92,15 @@ int main()
     GearModelTransform2.Scale[2] = 0.075f;
 
     BushModelTransform = CreateNewModelTransform();
-    BushModelTransform.Position[0] = 0.0f;
-    BushModelTransform.Position[1] = -75.0f;
-    BushModelTransform.Position[2] = 0.0f;
-    BushModelTransform.Scale[0] = 0.3f;
-    BushModelTransform.Scale[1] = 0.3f;
-    BushModelTransform.Scale[2] = 0.3f;
+    BushModelTransform.Position[1] = -95.0f;
+    BushModelTransform.Scale[0] = 0.35f;
+    BushModelTransform.Scale[1] = 0.35f;
+    BushModelTransform.Scale[2] = 0.35f;
     AssignNewRenderBlock(&BushModelTransform, BushModel);
 
     // Rotate the camera downwards about 45 degrees
-    RotateCameraRelative(0.0f, -45.0f, 0.0f, &CamProps);
+    //RotateCameraRelative(0.0f, -45.0f, 0.0f, &CamProps);
+    //RotateVector3ByDegrees(&CamProps.Target, (T3DVec3){{45.0f, -45.0f, 0.0f}});
 
     // Game loop
     while (true)
@@ -113,23 +111,11 @@ int main()
         // Update the scene before we start drawing
         // Apply transformations to the gears
         ModelAngle += 1.5f * DeltaTime;
-        Gear2Pos -= PosChg2 * DeltaTime;
-
-        if (Gear2Pos > 25.0f)
-        {
-            Gear2Pos = 25.0f;
-            PosChg2 = -PosChg2;
-        }
-        else if (Gear2Pos < -25.0f)
-        {
-            Gear2Pos = -25.0f;
-            PosChg2 = -PosChg2;
-        }
 
         // Gear 1
         GearModelTransform1.Rotation[0] = ModelAngle * RotationSpeed;
         GearModelTransform1.Rotation[1] = ModelAngle * RotationSpeed;
-        GearModelTransform1.Rotation[2] = ModelAngle * RotationSpeed;
+        GearModelTransform1.Rotation[2] = ModelAngle * RotationSpeed * 4.0f;
 
         // Gear 2
         GearModelTransform2.Rotation[2] = ModelAngle * RotationSpeed * 16.0f;

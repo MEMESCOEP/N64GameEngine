@@ -188,8 +188,7 @@ void RotateCameraRelative(float XAngle, float YAngle, float ZAngle, struct Camer
     CamProps->UpDir.v[2] = ZRadians;
 
     // Up / Down rotation
-    CamProps->Target.v[1] += YRadians;
-    CamProps->UpDir.v[1] += YRadians;
+    CamProps->Target.v[1] += YAngle;
 
     /*CamProps->Target.v[0] = CamProps->Position.v[0] + (cos(player.phi) * cos(player.theta));
     CamProps->Target.v[1] = CamProps->Position.v[1] + (cos(player.phi) * sin(player.theta));
@@ -205,6 +204,7 @@ void RotateCameraAroundPoint(float RotationAngle, struct CameraProperties *CamPr
 
     CamProps->Position.v[0] = PointToRotateAround.v[0] + DX;
     CamProps->Position.v[2] = PointToRotateAround.v[2] + DZ;
+    CamProps->Target.v[1] = PointToRotateAround.v[1];
 }
 
 // ----- Drawing functions -----

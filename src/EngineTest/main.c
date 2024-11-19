@@ -37,7 +37,6 @@ float ModelAngle = 0.0f;
 float Gear2Pos = 0.0f;
 float PosChg2 = -10.0f;
 int DebugMode = 1;
-int BIndex = 0;
 
 
 /* FUNCTIONS */
@@ -159,13 +158,9 @@ int main()
         RenderModel(FloorModel, &FloorModelTransform, false, false);
 
         // Update the bush transform's position so 4 bushes can be drawn (one per corner)
-        // Please god let this work, what black magic is going on here
-        BushModelTransform.Position[0] = BushPositions[BIndex][0];
-        BushModelTransform.Position[2] = BushPositions[BIndex][1];
-
-        for (int BushPosIndex = 0; BushPosIndex < 4; BushPosIndex++)
+        // There's some black magic going on here where the loop starts at 1 if BushPosIndex starts as 0. I have no idea why, please help C gods
+        for (int BushPosIndex = -1; BushPosIndex < 4; BushPosIndex++)
         {
-            BIndex += BushPosIndex + 1;
             BushModelTransform.Position[0] = BushPositions[BushPosIndex][0];
             BushModelTransform.Position[2] = BushPositions[BushPosIndex][1];
             RenderModel(BushModel, &BushModelTransform, true, false); // BushPosIndex > 0 for SkipDraw parameter (debugging)
@@ -177,7 +172,7 @@ int main()
         rdpq_set_prim_color(GetRainbowColor(ModelAngle * 0.42));
         RenderModel(GearModel, &GearModelTransform2, false, false);
 
-        // Draw debug statistics (all rendered text should be drawn after everything else, unless you have a specific reason not to)
+        // Draw debug statistics (all 2D on-screen text should be drawn after everything else unless you have a specific reason not to, like having 3D text. 3D text is usually part of a material though)
         if (DebugMode > 0)
         {
             rdpq_text_printf(NULL, DebugFont, 5, 12, "MEMORY USED: %.2fkb", (HeapStats.used / 1024.0f) * 1.024f);
@@ -192,22 +187,10 @@ int main()
                 rdpq_text_printf(NULL, DebugFont, 5, 72, "UP DIR: %.3f, %.3f, %.3f", CamProps.UpDir.v[0], CamProps.UpDir.v[1], CamProps.UpDir.v[2]);
                 rdpq_text_printf(NULL, DebugFont, 5, 84, "CAM FWD: %.3f, %.3f, %.3f", CamForwardVector.v[0], CamForwardVector.v[1], CamForwardVector.v[2]);
                 rdpq_text_printf(NULL, DebugFont, 5, 96, "STICK: X=%d || Y=%d", Input.StickState[0], Input.StickState[1]);
-                rdpq_text_printf(NULL, DebugFont, 5, 108, "BIndex: %d", BIndex);
             }
         }
         
         EndFrame();
-
-        BIndex = 0;
-        /*if (FrameCount % 30 == 0)
-        {
-            BIndex++;
-        }
-
-        if (BIndex > 3)
-        {
-            BIndex = 0;
-        }*/
     }
 
     t3d_destroy();

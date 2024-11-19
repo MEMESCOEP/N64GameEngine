@@ -8,7 +8,7 @@ include $(N64_INST)/include/t3d.mk
 N64_CFLAGS += -std=gnu2x
 MKFONT_FLAGS ?= --size 14
 
-src = main.c
+src = $(wildcard $(PARENT)/*.c) $(wildcard *.c) # Include the library files form the parent path (THIS ONLY WORKS IF THIS IS A CHILD OF THE LIBRARY SOURCE DIR!)
 assets_ttf = $(wildcard assets/*.ttf)
 assets_png = $(wildcard assets/*.png)
 assets_gltf = $(wildcard assets/*.glb)
@@ -17,8 +17,6 @@ assets_conv = $(addprefix filesystem/,$(notdir $(assets_png:%.png=%.sprite))) \
 			  $(addprefix filesystem/,$(notdir $(assets_gltf:%.glb=%.t3dm)))
 
 all: EngineTest.z64
-all:
-	rm $(CURDIR)/N64GameEngine.c $(CURDIR)/N64GameEngine.h $(CURDIR)/MathUtils.c $(CURDIR)/MathUtils.h
 
 filesystem/%.sprite: assets/%.png
 	@mkdir -p $(dir $@)
@@ -37,14 +35,12 @@ filesystem/%.t3dm: assets/%.glb
 	$(N64_BINDIR)/mkasset -c 2 -o filesystem $@
 
 $(BUILD_DIR)/EngineTest.dfs: $(assets_conv)
-$(BUILD_DIR)/EngineTest.elf: build/main.o main.c build/N64GameEngine.o N64GameEngine.c build/MathUtils.o MathUtils.c
+$(BUILD_DIR)/EngineTest.elf: $(src:%.c=$(BUILD_DIR)/%.o)
 
 EngineTest.z64: N64_ROM_TITLE="N64 Game Engine Test"
 EngineTest.z64: $(BUILD_DIR)/EngineTest.dfs
 
 clean:
-	# This needs to be replaced with something better eventually
-	cp $(PARENT)/N64GameEngine.c $(PARENT)/N64GameEngine.h $(PARENT)/MathUtils.c $(PARENT)/MathUtils.h $(CURDIR)
 	rm -rf $(BUILD_DIR) *.z64
 	rm -rf filesystem
 

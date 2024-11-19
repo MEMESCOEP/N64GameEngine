@@ -6,8 +6,8 @@
 #include <t3d/t3dmath.h>
 #include <t3d/t3dmodel.h>
 #include <t3d/t3ddebug.h>
-#include "N64GameEngine.h"
-#include "MathUtils.h"
+#include "../N64GameEngine.h"
+#include "../MathUtils.h"
 
 
 /* VARIABLES */

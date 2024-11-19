@@ -27,6 +27,7 @@ rdpq_font_t *NewFont;
 T3DModel *FloorModel;
 T3DModel *GearModel;
 T3DModel *BushModel;
+T3DVec3 CameraRotationPoint = {{0.0f, 0.0f, 0.0f}};
 T3DVec3 SunDirection = {{-1.0f, 1.0f, 1.0f}};
 color_t SkyColor = (color_t){.r=0x87, .g=0xCE, .b=0xEB, .a=0xFF};
 uint8_t AmbientColor[4] = {80, 80, 100, 0xFF};
@@ -134,7 +135,7 @@ int main()
         GearModelTransform2.Rotation[2] = ModelAngle * RotationSpeed * 16.0f;
 
         // Rotate the camera around the center of the scene, at a speed of 15 degrees per second
-        RotateCameraRelative(15.0f * DeltaTime, 0.0f, 5.0f * DeltaTime, &CamProps);
+        RotateCameraAroundPoint(15.0f * DeltaTime, &CamProps, CameraRotationPoint);
 
         // Read controller input from port 1
         GetControllerInput(&Input, JOYPAD_PORT_1);
@@ -158,7 +159,8 @@ int main()
         RenderModel(FloorModel, &FloorModelTransform, false, false);
 
         // Update the bush transform's position so 4 bushes can be drawn (one per corner)
-        // There's some black magic going on here where the loop starts at 1 if BushPosIndex starts as 0. I have no idea why, please help C gods
+        // There's some black magic going on here where the loop starts at 1 if BushPosIndex starts as 0. I have no idea why, please help C gods.
+        // To get around this, I just set BushPosIndex to -1 so that when it gets incremented it starts at zero. This is not a nice fix-
         for (int BushPosIndex = -1; BushPosIndex < 4; BushPosIndex++)
         {
             BushModelTransform.Position[0] = BushPositions[BushPosIndex][0];

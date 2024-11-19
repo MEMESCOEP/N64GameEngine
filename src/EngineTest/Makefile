@@ -1,16 +1,14 @@
 BUILD_DIR=build
-T3D_INST=$(shell realpath ../tiny3d)
 PARENT=$(shell realpath ../)
 CURDIR=$(shell realpath ./)
 
 include $(N64_INST)/include/n64.mk
-include $(T3D_INST)/t3d.mk
+include $(N64_INST)/include/t3d.mk
 
 N64_CFLAGS += -std=gnu2x
 MKFONT_FLAGS ?= --size 14
 
 src = main.c
-
 assets_ttf = $(wildcard assets/*.ttf)
 assets_png = $(wildcard assets/*.png)
 assets_gltf = $(wildcard assets/*.glb)
@@ -45,6 +43,7 @@ EngineTest.z64: N64_ROM_TITLE="N64 Game Engine Test"
 EngineTest.z64: $(BUILD_DIR)/EngineTest.dfs
 
 clean:
+	# This needs to be replaced with something better eventually
 	cp $(PARENT)/N64GameEngine.c $(PARENT)/N64GameEngine.h $(PARENT)/MathUtils.c $(PARENT)/MathUtils.h $(CURDIR)
 	rm -rf $(BUILD_DIR) *.z64
 	rm -rf filesystem

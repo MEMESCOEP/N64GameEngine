@@ -170,11 +170,14 @@ int main()
             if (DebugMode == 2)
             {
                 T3DVec3 CamForwardVector = GetCameraForwardVector(CamProps.Position, CamProps.Target);
+                T3DVec3 UnitSpherePoint = Vec3UnitCirclePointFromAngle(0.0f, -45.0f);
+                
                 rdpq_text_printf(NULL, DebugFont, 5, 48, "CAM TGT: %.3f, %.3f, %.3f", CamProps.Target.v[0], CamProps.Target.v[1], CamProps.Target.v[2]);
                 rdpq_text_printf(NULL, DebugFont, 5, 60, "CAM POS: %.3f, %.3f, %.3f", CamProps.Position.v[0], CamProps.Position.v[1], CamProps.Position.v[2]);
                 rdpq_text_printf(NULL, DebugFont, 5, 72, "UP DIR: %.3f, %.3f, %.3f", CamProps.UpDir.v[0], CamProps.UpDir.v[1], CamProps.UpDir.v[2]);
                 rdpq_text_printf(NULL, DebugFont, 5, 84, "CAM FWD: %.3f, %.3f, %.3f", CamForwardVector.v[0], CamForwardVector.v[1], CamForwardVector.v[2]);
                 rdpq_text_printf(NULL, DebugFont, 5, 96, "STICK: X=%d || Y=%d", Input.StickState[0], Input.StickState[1]);
+                rdpq_text_printf(NULL, DebugFont, 5, 96, "USP: %.2f, %.2f, %.2f", UnitSpherePoint.v[0], UnitSpherePoint.v[1], UnitSpherePoint.v[2]);
             }
         }
         

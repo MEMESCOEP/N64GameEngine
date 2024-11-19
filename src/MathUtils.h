@@ -14,6 +14,6 @@ void RotateVectorAxisX(T3DVec3 *VectorToRotate, float Degrees);
 void RotateVectorAxisY(T3DVec3 *VectorToRotate, float Degrees);
 void RotateVectorAxisZ(T3DVec3 *VectorToRotate, float Degrees);
 void RotateVector3ByDegrees(T3DVec3 *Vector3ToRotate, T3DVec3 RotationDegrees);
-T3DVec3 Vec3UnitCirclePointFromAngle(T3DVec3 *VectorToRotate, T3DVec3 Position, float Degrees);
+T3DVec3 Vec3UnitCirclePointFromAngle(float HorizontalDegrees, float VerticalDegrees);
 T3DVec3 GetCameraForwardVector(T3DVec3 CameraPosition, T3DVec3 CameraTarget);
 #endif

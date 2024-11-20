@@ -150,11 +150,14 @@ int main()
         // Update the bush transform's position so 4 bushes can be drawn (one per corner)
         // There's some black magic going on here where the loop starts at 1 if BushPosIndex starts as 0. I have no idea why, please help C gods.
         // To get around this, I just set BushPosIndex to -1 so that when it gets incremented it starts at zero. This is not a nice fix-
-        for (int BushPosIndex = -1; BushPosIndex < 4; BushPosIndex++)
+        for (int BushPosIndex = 0; BushPosIndex < 4; BushPosIndex++)
         {
             BushModelTransform.Position[0] = BushPositions[BushPosIndex][0];
             BushModelTransform.Position[2] = BushPositions[BushPosIndex][1];
             RenderModel(BushModel, &BushModelTransform, true, false); // BushPosIndex > 0 for SkipDraw parameter (debugging)
+
+            if (BushPosIndex == 0)
+                debugf("Bush pos: %.2f, %.2f (bush #%d)\n", BushPositions[BushPosIndex][0], BushPositions[BushPosIndex][1], BushPosIndex);
         }
 
         // The colored-band on the gear model is using the 'prim-color' property

@@ -50,6 +50,9 @@ extern int FPS;
 
 
 /* FUNCTIONS */
+// ----- Debug functions -----
+void FancyPrintMatrix(T3DMat4 Matrix);
+
 // ----- Engine functions -----
 void InitSystem(resolution_t Resolution, bitdepth_t BitDepth, uint32_t BufferNum, filter_options_t Filters, bool Init3D);
 void UpdateEngine();

@@ -35,20 +35,53 @@ int FPS = 0;
 
 
 /* FUNCTIONS */
+// ----- Debug functions -----
+/*void ConsolePrint(char* Message)
+{
+    debugf("    BushPosIndex %d\n", BushPosIndex);
+}*/
+
+void FancyPrintMatrix(T3DMat4 Matrix)
+{
+    for (int Y = 0; Y < 4; Y++)
+    {
+        for (int X = 0; X < 4; X++)
+        {
+            debugf("[%.2f] ", Matrix.m[Y][X]);
+        }
+
+        debugf("\n");
+    }
+}
+
 // ----- Engine functions -----
 // Initializes the display, debug, timer, rdpq, etc
 void InitSystem(resolution_t Resolution, bitdepth_t BitDepth, uint32_t BufferNum, filter_options_t Filters, bool Init3D)
 {
-    timer_init();
-    controller_init();
     debug_init_isviewer();
     debug_init_usblog();
+
+    debugf("[INFO] >> Initializing timer...\n");
+    timer_init();
+
+    debugf("[INFO] >> Initializing controller(s)...\n");
+    controller_init();
+
+    debugf("[INFO] >> Initializing filesystem...\n");
     asset_init_compression(2);
     dfs_init(DFS_DEFAULT_LOCATION);
+
+    debugf("[INFO] >> Initializing display...\n");
     display_init(Resolution, BitDepth, BufferNum, GAMMA_NONE, Filters);
+
+    debugf("[INFO] >> Initializing RDPQ...\n");
     rdpq_init();
-    t3d_debug_print_init();
+
+    debugf("[INFO] >> Initializing Tiny3D...\n");
+    //t3d_debug_print_init();
     t3d_init((T3DInitParams){});
+
+    debugf("[INFO] >> All init stages done.\n");
 }
 
 // Update all engine data when required
@@ -132,6 +165,7 @@ void SetTargetFPS(int Target)
 {
     TargetFPS = Target;
     display_set_fps_limit(TargetFPS);
+    debugf("[INFO] >> Set target FPS to %d.\n", Target);
 }
 
 // Calculate milliseconds per frame for a given framerate

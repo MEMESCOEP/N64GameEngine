@@ -27,7 +27,7 @@ rdpq_font_t *NewFont;
 T3DModel *FloorModel;
 T3DModel *GearModel;
 T3DModel *BushModel;
-T3DVec3 CameraRotationPoint = {{0.0f, -45.0f, 0.0f}};
+T3DVec3 CameraRotationPoint = {{0.0f, -50.0f, 0.0f}};
 T3DVec3 SunDirection = {{-1.0f, 1.0f, 1.0f}};
 color_t SkyColor = (color_t){.r=0x87, .g=0xCE, .b=0xEB, .a=0xFF};
 uint8_t AmbientColor[4] = {80, 80, 100, 0xFF};
@@ -36,6 +36,8 @@ float BushPositions[4][2] = {{-175.0f, -175.0f}, {175.0f, -175.0f}, {-175.0f, 17
 float RotationSpeed = 0.25f;
 float ModelAngle = 0.0f;
 int DebugMode = 1;
+float DegreesX = 0;
+float DegreesY = 0;
 
 
 /* FUNCTIONS */
@@ -122,6 +124,7 @@ int main()
 
         // Rotate the camera around the center of the scene, at a speed of 15 degrees per second
         RotateCameraAroundPoint(15.0f * DeltaTime, &CamProps, CameraRotationPoint);
+        //RotateCameraToAngle(-FrameCount * DeltaTime * 15.0f, -60.0f, &CamProps);
 
         // Read controller input from port 1
         GetControllerInput(&Input, JOYPAD_PORT_1);
@@ -170,14 +173,12 @@ int main()
             if (DebugMode == 2)
             {
                 T3DVec3 CamForwardVector = GetCameraForwardVector(CamProps.Position, CamProps.Target);
-                T3DVec3 UnitSpherePoint = Vec3UnitCirclePointFromAngle(0.0f, -45.0f);
-                
+
                 rdpq_text_printf(NULL, DebugFont, 5, 48, "CAM TGT: %.3f, %.3f, %.3f", CamProps.Target.v[0], CamProps.Target.v[1], CamProps.Target.v[2]);
                 rdpq_text_printf(NULL, DebugFont, 5, 60, "CAM POS: %.3f, %.3f, %.3f", CamProps.Position.v[0], CamProps.Position.v[1], CamProps.Position.v[2]);
                 rdpq_text_printf(NULL, DebugFont, 5, 72, "UP DIR: %.3f, %.3f, %.3f", CamProps.UpDir.v[0], CamProps.UpDir.v[1], CamProps.UpDir.v[2]);
                 rdpq_text_printf(NULL, DebugFont, 5, 84, "CAM FWD: %.3f, %.3f, %.3f", CamForwardVector.v[0], CamForwardVector.v[1], CamForwardVector.v[2]);
                 rdpq_text_printf(NULL, DebugFont, 5, 96, "STICK: X=%d || Y=%d", Input.StickState[0], Input.StickState[1]);
-                rdpq_text_printf(NULL, DebugFont, 5, 96, "USP: %.2f, %.2f, %.2f", UnitSpherePoint.v[0], UnitSpherePoint.v[1], UnitSpherePoint.v[2]);
             }
         }
         

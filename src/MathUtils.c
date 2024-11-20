@@ -40,16 +40,17 @@ void RotateVector3ByDegrees(T3DVec3 *Vector3ToRotate, T3DVec3 RotationDegrees)
 }
 
 // Get a point on a unit circle using a position and an angle
-T3DVec3 Vec3UnitCirclePointFromAngle(float HorizontalDegrees, float VerticalDegrees)
+T3DVec3 Vec3UnitCirclePointFromAngle(float HorizontalDegrees, float VerticalDegrees, T3DVec3 CenterPoint)
 {
     T3DVec3 ResultingVector;
     float HRadians = T3D_DEG_TO_RAD(HorizontalDegrees);
     float VRadians = T3D_DEG_TO_RAD(VerticalDegrees);
 
     // Calculate x, y, z coordinates from spherical coordinates
-    ResultingVector.v[0] = sin(VRadians) * cos(HRadians);
-    ResultingVector.v[1] = sin(VRadians) * sin(HRadians);
-    ResultingVector.v[2] = cos(VRadians);
+    ResultingVector.v[0] = CenterPoint.v[0] + cos(VRadians) * sin(HRadians);
+    ResultingVector.v[1] = CenterPoint.v[1] + sin(VRadians);
+    //ResultingVector.v[2] = CenterPoint.v[2] + cos(HRadians);
+    ResultingVector.v[2] = CenterPoint.v[2] + cos(VRadians) * cos(HRadians);
 
     return ResultingVector;
 }

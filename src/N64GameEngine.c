@@ -156,17 +156,11 @@ float FPSToMS(int FPSToConvert)
 // Rotate the camera to x degrees (not relative to its current angles) [BROKEN]
 void RotateCameraToAngle(float XAngle, float YAngle, struct CameraProperties *CamProps)
 {
-    float XRadians = T3D_DEG_TO_RAD(XAngle);
-    float YRadians = T3D_DEG_TO_RAD(YAngle);
-    T3DVec3 NewTarget;
-
-    // Calculate the direction from the camera to the target
-    NewTarget.v[0] = CamProps->Target.v[0] - CamProps->Position.v[0];
-    NewTarget.v[2] = CamProps->Target.v[2] - CamProps->Position.v[2];
-
-    CamProps->Target.v[0] = CamProps->Position.v[0] + (cos(XRadians) * sin(XRadians));
-    CamProps->Target.v[1] += YRadians;
-    CamProps->Target.v[2] = CamProps->Position.v[2] + (sin(XRadians) * cos(XRadians));
+    T3DVec3 UnitSpherePoint = Vec3UnitCirclePointFromAngle(XAngle, YAngle, CamProps->Position);
+    
+    CamProps->Target.v[0] = UnitSpherePoint.v[0];
+    CamProps->Target.v[1] = UnitSpherePoint.v[1];
+    CamProps->Target.v[2] = UnitSpherePoint.v[2];
 }
 
 // Rotate the camera by x degrees (relative to its current angles)

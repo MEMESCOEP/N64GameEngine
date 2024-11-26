@@ -48,6 +48,7 @@ struct ControllerState
     joypad_buttons_t ReleasedButtons;
     joypad_buttons_t PressedButtons;
     joypad_buttons_t HeldButtons;
+    float StickStateNormalized[2];
     int StickState[2];
 };
 
@@ -120,6 +121,5 @@ void Start2DMode();
 
 // ----- Input functions -----
 void GetControllerInput(struct ControllerState *StructToUpdate, int ControllerPort);
-bool IsControllerConnected(int ControllerPort);
 
 #endif

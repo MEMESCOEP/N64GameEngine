@@ -36,6 +36,7 @@ long long LastDeltaTime = 0;
 long long FPSStart = 0;
 long long DTStart = 0;
 float CameraClipping[2] = {10.0f, 200.0f};
+float JoystickRange[2] = {0.0f, 85.0f};
 float DeltaTime = 0.0f;
 int FPSCheckCount = 0;
 int FrameCount = 0;
@@ -394,7 +395,7 @@ void Start2DMode()
 // ----- Input functions -----
 void GetControllerInput(struct ControllerState *StructToUpdate, int ControllerPort)
 {
-    if (IsControllerConnected(ControllerPort) == false)
+    if (joypad_is_connected(ControllerPort) == false)
     {
         return;
     }
@@ -405,11 +406,8 @@ void GetControllerInput(struct ControllerState *StructToUpdate, int ControllerPo
     StructToUpdate->ReleasedButtons = joypad_get_buttons_released(ControllerPort);
     StructToUpdate->PressedButtons = joypad_get_buttons_pressed(ControllerPort);
     StructToUpdate->HeldButtons = joypad_get_buttons(ControllerPort);
+    StructToUpdate->StickStateNormalized[0] = StickState.stick_x / JoystickRange[1];
+    StructToUpdate->StickStateNormalized[1] = StickState.stick_y / JoystickRange[1];
     StructToUpdate->StickState[0] = StickState.stick_x;
     StructToUpdate->StickState[1] = StickState.stick_y;
-}
-
-bool IsControllerConnected(int ControllerPort)
-{
-    return joypad_is_connected(ControllerPort);
 }

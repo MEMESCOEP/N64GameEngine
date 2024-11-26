@@ -42,6 +42,7 @@ float BushPositions[4][2] = {{175.0f, 175.0f}, {175.0f, -175.0f}, {-175.0f, -175
 float HeadPositions[4][2] = {{175.0f, 175.0f}, {175.0f, -175.0f}, {-175.0f, -175.0f}, {-175.0f, 175.0f}};
 float RotationSpeed = 0.25f;
 float ModelAngle = 0.0f;
+int CameraMode = 0;
 int DebugMode = 1;
 
 
@@ -137,14 +138,27 @@ int main()
         ModelAngle += 1.5f * DeltaTime;
         GearModelTransform1.Rotation[0] = ModelAngle * RotationSpeed;
         GearModelTransform1.Rotation[1] = ModelAngle * RotationSpeed;
-        GearModelTransform1.Rotation[2] = ModelAngle * RotationSpeed * 4.0f;
-
-        // Rotate the camera around the center of the scene, at a speed of 15 degrees per second
-        RotateCameraAroundPoint(15.0f * DeltaTime, &CamProps, (T3DVec3){{0.0f, -50.0f, 0.0f}});
-        //RotateCameraToAngle(FrameCount * DeltaTime * 15.0f, 0.0f, &CamProps);
+        GearModelTransform1.Rotation[2] = ModelAngle * RotationSpeed * 4.0f;    
 
         // Read controller input from port 1
         GetControllerInput(&Input, JOYPAD_PORT_1);
+
+        // Rotate the camera around the center of the scene, at a speed of 15 degrees per second
+        if (CameraMode == 0)
+        {
+            RotateCameraAroundPoint(15.0f * DeltaTime, &CamProps, (T3DVec3){{0.0f, -50.0f, 0.0f}});
+            CamProps.Target = (T3DVec3){{0.0f, -50.0f, 0.0f}};
+        }
+        else
+        {
+            RotateCameraRelative(Input.StickStateNormalized[0] * 75.0f * DeltaTime, Input.StickStateNormalized[1] * 75.0f * DeltaTime, 0.0f, &CamProps);
+
+            // Move the camera
+            if (Input.HeldButtons.d_up)
+            {
+                CamProps.Position = t3d_vec3_dot(CamProps.Position, GetCameraForwardVector(CamProps.Position, CamProps.Target));
+            }
+        }    
 
         // Switch between debug modes
         //  0: No debug info is displayed
@@ -157,6 +171,16 @@ int main()
             if (DebugMode > 2) DebugMode = 0;
         }
 
+        // Switch between camera modes
+        //  0: Rotate around the center of the screen
+        //  1: Manual control
+        if (Input.PressedButtons.a)
+        {
+            CameraMode++;
+
+            if (CameraMode > 1) CameraMode = 0;
+        }
+
         // Start the frame and enter 3D mode
         // All 3D graphics operations should almost always take place in 3D mode
         StartFrame();
@@ -166,7 +190,6 @@ int main()
 
         // Render models
         RenderModel(FloorModel, &FloorModelTransform, true);
-        //RenderModel(FenceModel, &FenceModelTransform, true);
 
         // Draw 4 bushes; one in each corner
         // Also draw 4 fences
@@ -200,7 +223,7 @@ int main()
                 rdpq_text_printf(NULL, 1, 5, 60, "CAM POS: %.3f, %.3f, %.3f", CamProps.Position.v[0], CamProps.Position.v[1], CamProps.Position.v[2]);
                 rdpq_text_printf(NULL, 1, 5, 72, "UP DIR: %.3f, %.3f, %.3f", CamProps.UpDir.v[0], CamProps.UpDir.v[1], CamProps.UpDir.v[2]);
                 rdpq_text_printf(NULL, 1, 5, 84, "CAM FWD: %.3f, %.3f, %.3f", CamForwardVector.v[0], CamForwardVector.v[1], CamForwardVector.v[2]);
-                rdpq_text_printf(NULL, 1, 5, 96, "STICK: X=%d || Y=%d", Input.StickState[0], Input.StickState[1]);
+                rdpq_text_printf(NULL, 1, 5, 96, "STICK: X=%f || Y=%f", Input.StickStateNormalized[0], Input.StickStateNormalized[1]);
             }
         }
 

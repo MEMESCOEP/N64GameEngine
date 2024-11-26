@@ -84,13 +84,14 @@ int main()
         //HeadModels[ModelIndex] = t3d_model_load(HeadModelPaths[ModelIndex]);
     }
 
+    // This scale may need to be tweaked to prevent "jitter" and texture distortion
     FloorModelTransform = CreateNewModelTransform();
     FloorModelTransform.Position[0] = 0.0f;
     FloorModelTransform.Position[1] = -100.0f;
     FloorModelTransform.Position[2] = 0.0f;
-    FloorModelTransform.Scale[0] = 1.0f;
+    FloorModelTransform.Scale[0] = 0.75f;
     FloorModelTransform.Scale[1] = 1.0f;
-    FloorModelTransform.Scale[2] = 1.0f;
+    FloorModelTransform.Scale[2] = 0.75f;
 
     FenceModelTransform = CreateNewModelTransform();
     FenceModelTransform.Position[0] =  0.0f;

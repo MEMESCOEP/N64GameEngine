@@ -1,3 +1,12 @@
+/* N64 GAME ENGINE */
+// Main engine file
+// Written by MEMESCOEP
+// November of 2024
+// Thanks to the LibDragon and Tiny3D libraries for making this project possible
+// LibDragon github -> https://github.com/DragonMinded/libdragon
+// Tiny3D github -> https://github.com/HailToDodongo/tiny3d
+
+
 /* LIBRARIES */
 #include <libdragon.h>
 #include <t3d/t3d.h>
@@ -16,6 +25,7 @@ struct CameraProperties DefaultCameraProperties = {
     70.0f
 };
 
+enum EngineDebugModes CurrentDebugMode = NONE;
 heap_stats_t HeapStats;
 rspq_block_t *DrawCommands = NULL;
 surface_t *DisplaySurface = NULL;
@@ -36,9 +46,47 @@ int FPS = 0;
 
 /* FUNCTIONS */
 // ----- Debug functions -----
+// Set the engine's debug mode
+// See the EngineDebugModes enum (defined in game engine header) for more details
+void SetDebugMode(enum EngineDebugModes DebugMode)
+{
+    CurrentDebugMode = DebugMode;
+}
+
+// Get the engine's current debug mode
+// See the EngineDebugModes enum (defined in game engine header) for more details
+enum EngineDebugModes GetDebugMode()
+{
+    return CurrentDebugMode;
+}
+
+void DebugPrint(char *Message, enum EngineDebugModes DebugMode)
+{
+    if (CurrentDebugMode == NONE || (DebugMode == MINIMAL && CurrentDebugMode == ALL))
+        return;
+
+    if (DebugMode == ALL || DebugMode == CurrentDebugMode)
+    {
+        debugf(Message);
+    }
+}
+
 /*void ConsolePrint(char* Message)
 {
     debugf("    BushPosIndex %d\n", BushPosIndex);
+}*/
+
+/*void FancyPrintMatrixFP(T3DMat4FP MatrixFP)
+{
+    for (int Y = 0; Y < 4; Y++)
+    {
+        for (int X = 0; X < 4; X++)
+        {
+            debugf("[%.2f] ", MatrixFP.m[Y][X]);
+        }
+
+        debugf("\n");
+    }
 }*/
 
 void FancyPrintMatrix(T3DMat4 Matrix)
@@ -61,27 +109,30 @@ void InitSystem(resolution_t Resolution, bitdepth_t BitDepth, uint32_t BufferNum
     debug_init_isviewer();
     debug_init_usblog();
 
-    debugf("[INFO] >> Initializing timer...\n");
+    DebugPrint("[INFO] >> Initializing timer...\n", ALL);
     timer_init();
 
-    debugf("[INFO] >> Initializing controller(s)...\n");
+    DebugPrint("[INFO] >> Initializing controllers...\n", ALL);
     controller_init();
 
-    debugf("[INFO] >> Initializing filesystem...\n");
+    DebugPrint("[INFO] >> Initializing filesystem & assets...\n", ALL);
     asset_init_compression(2);
     dfs_init(DFS_DEFAULT_LOCATION);
 
-    debugf("[INFO] >> Initializing display...\n");
+    if (CurrentDebugMode == MINIMAL || CurrentDebugMode == ALL)
+    {
+        debugf("[INFO] >> Initializing display (%ldx%ld @ %dBPP)...\n", Resolution.width, Resolution.height, (BitDepth + 1) * 16);
+    }
+    
     display_init(Resolution, BitDepth, BufferNum, GAMMA_NONE, Filters);
 
-    debugf("[INFO] >> Initializing RDPQ...\n");
+    DebugPrint("[INFO] >> Initializing RDPQ...\n", ALL);
     rdpq_init();
 
-    debugf("[INFO] >> Initializing Tiny3D...\n");
-    //t3d_debug_print_init();
+    DebugPrint("[INFO] >> Initializing Tiny3D...\n", ALL);
     t3d_init((T3DInitParams){});
 
-    debugf("[INFO] >> All init stages done.\n");
+    DebugPrint("[INFO] >> All init stages done.\n", ALL);
 }
 
 // Update all engine data when required
@@ -127,8 +178,13 @@ rdpq_font_t *RegisterFont(char *FontPath, int FontID)
 struct ModelTransform CreateNewModelTransform()
 {
     struct ModelTransform NewModelTransform;
+
+    // Allocate a fixed-point matrix pointer
     NewModelTransform.ModelMatrixFP = malloc_uncached(sizeof(T3DMat4FP));
     NewModelTransform.RenderBlock = NULL;
+
+    // Set SRT transform data. This will prevent undefined behavior because we initialize to a known value
+    // Note that rotation (euler angles) is in degrees
     NewModelTransform.Position[0] = 0.0f;
     NewModelTransform.Position[1] = 0.0f;
     NewModelTransform.Position[2] = 0.0f;
@@ -146,10 +202,16 @@ struct ModelTransform CreateNewModelTransform()
 // Creates a new render block and assigns it to a model transform
 void AssignNewRenderBlock(struct ModelTransform *Transform, T3DModel *ModelToRender)
 {
+    if (Transform->RenderBlock != NULL)
+    {
+        rspq_wait();
+        rspq_block_free(Transform->RenderBlock);
+    }
+
     rspq_block_begin();
-    t3d_matrix_push(Transform->ModelMatrixFP);
+    //t3d_matrix_push(Transform->ModelMatrixFP);
     t3d_model_draw(ModelToRender);
-    t3d_matrix_pop(1);
+    //t3d_matrix_pop(1);
     Transform->RenderBlock = rspq_block_end();
 }
 
@@ -165,7 +227,11 @@ void SetTargetFPS(int Target)
 {
     TargetFPS = Target;
     display_set_fps_limit(TargetFPS);
-    debugf("[INFO] >> Set target FPS to %d.\n", Target);
+
+    if (CurrentDebugMode == MINIMAL || CurrentDebugMode == ALL)
+    {
+        debugf("[INFO] >> Set target FPS to %d.\n", Target);
+    }
 }
 
 // Calculate milliseconds per frame for a given framerate
@@ -252,48 +318,60 @@ void DrawString(char* Text, int FontID, int XPos, int YPos)
     rdpq_paragraph_free(par);
 }
 
-// Render a 3D model on the screen (SkipDraw is for debugging only)
-void RenderModel(T3DModel *ModelToRender, struct ModelTransform *Transform, bool CreateNewRenderBlock, bool SkipDraw)
+// [USES TRANSFORM] Render a 3D model at the specified SRT
+void RenderModel(T3DModel *ModelToRender, struct ModelTransform *Transform, bool UpdateMatrix)
 {
-    // Create a matrix so the model can be rendered
-    t3d_mat4_from_srt_euler(&Transform->ModelMatrix,
-        Transform->Scale,
-        Transform->Rotation,
-        Transform->Position
-    );
-
-    t3d_mat4_to_fixed(Transform->ModelMatrixFP, &Transform->ModelMatrix);
-
-    // Create a new render block if the current transform does not yet have one
-    if (CreateNewRenderBlock == true && Transform->RenderBlock)
+    if (UpdateMatrix == true)
     {
-        rspq_wait();
-        rspq_block_free(Transform->RenderBlock);
-        AssignNewRenderBlock(Transform, ModelToRender);
+        UpdateTransformMatrix(Transform);
     }
-    else if (!Transform->RenderBlock)
+
+    // Render the model
+    if (Transform->RenderBlock == NULL)
     {
         AssignNewRenderBlock(Transform, ModelToRender);
     }    
 
-    // Render the model
-    if (SkipDraw == false)
+    t3d_matrix_push_pos(1);
+    t3d_matrix_set(Transform->ModelMatrixFP, true);
+    rspq_block_run(Transform->RenderBlock);
+    t3d_matrix_pop(1);
+}
+
+// [USES TRANSFORM] Render a 3D model without pushing / popping a matrix. The push / pop action should be done externally with the "t3d_matrix_push_pos" and "t3d_matrix_pop" functions
+void RenderMultiModel(T3DModel *ModelToRender, struct ModelTransform *Transform, bool UpdateMatrix)
+{
+    if (UpdateMatrix == true)
     {
-        rspq_block_run(Transform->RenderBlock);
+        UpdateTransformMatrix(Transform);
     }
+
+    // Render the model
+    if (Transform->RenderBlock == NULL)
+    {
+        AssignNewRenderBlock(Transform, ModelToRender);
+    }    
+
+    t3d_matrix_set(Transform->ModelMatrixFP, true);
+    rspq_block_run(Transform->RenderBlock);
 }
 
 // Clear the screen and adjust lighting information
-void ClearScreen(color_t ClearColor, uint8_t *GlobalLightColor, uint8_t *SunColor, T3DVec3 *SunDirection)
+void ClearScreen(color_t ClearColor)
 {
     t3d_screen_clear_color(ClearColor);
     t3d_screen_clear_depth();
+}
+
+// Set the light count and color
+void UpdateLightProperties(int LightCount, uint8_t *GlobalLightColor, uint8_t *SunColor, T3DVec3 *SunDirection)
+{
     t3d_light_set_ambient(GlobalLightColor);
     t3d_light_set_directional(0, SunColor, SunDirection);
     t3d_light_set_count(1);
 }
 
-// Updates the projection and camera
+// Update the projection and camera
 void UpdateViewport(T3DViewport *Viewport, struct CameraProperties CamProps)
 {
     t3d_viewport_set_projection(Viewport, T3D_DEG_TO_RAD(CamProps.FOV), CameraClipping[0], CameraClipping[1]);
@@ -301,7 +379,7 @@ void UpdateViewport(T3DViewport *Viewport, struct CameraProperties CamProps)
 }
 
 // Begin a frame
-void StartFrame(T3DViewport *Viewport)
+void StartFrame()
 {
     if (!DisplaySurface)
     {        
@@ -311,8 +389,6 @@ void StartFrame(T3DViewport *Viewport)
     DisplaySurface = display_get();
 
     rdpq_attach(DisplaySurface, DepthBuffer);
-    t3d_frame_start();
-    t3d_viewport_attach(Viewport);
 }
 
 // Finish a frame
@@ -320,6 +396,20 @@ void EndFrame()
 {
     rdpq_detach_show();
     UpdateEngine();
+}
+
+// Configure RDPQ for 3D
+void Start3DMode(T3DViewport *Viewport)
+{
+    t3d_frame_start();
+    t3d_viewport_attach(Viewport);
+}
+
+// Configure RDPQ for 2D
+void Start2DMode()
+{
+    rdpq_sync_pipe();
+    rdpq_set_mode_standard();
 }
 
 // ----- Input functions -----

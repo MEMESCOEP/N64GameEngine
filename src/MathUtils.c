@@ -1,5 +1,16 @@
+/* N64 GAME ENGINE */
+// Math utilities file
+// Written by MEMESCOEP
+// November of 2024
+// Thanks to the LibDragon and Tiny3D libraries for making this project possible
+// LibDragon github -> https://github.com/DragonMinded/libdragon
+// Tiny3D github -> https://github.com/HailToDodongo/tiny3d
+
+
 /* LIBRARIES */
 #include <t3d/t3d.h>
+#include <t3d/t3dmath.h>
+#include "N64GameEngine.h"
 
 
 /* FUNCTIONS */
@@ -64,4 +75,25 @@ T3DVec3 GetCameraForwardVector(T3DVec3 CameraPosition, T3DVec3 CameraTarget)
     t3d_vec3_diff(&ResultingVector, &CameraTarget, &CameraPosition);
     t3d_vec3_norm(&ResultingVector);
     return ResultingVector;
+}
+
+// ----- Matrix math -----
+T3DMat4 CreateSRTMatrix(float Position[3], float Rotation[3], float Scale[3])
+{
+    T3DMat4 NewMatrix;
+
+    // Create a matrix so the model can be rendered
+    t3d_mat4_from_srt_euler(&NewMatrix,
+        Scale,
+        Rotation,
+        Position
+    );
+
+    return NewMatrix;
+}
+
+void UpdateTransformMatrix(struct ModelTransform *Transform)
+{
+    Transform->ModelMatrix = CreateSRTMatrix(Transform->Position, Transform->Rotation, Transform->Scale);
+    t3d_mat4_to_fixed(Transform->ModelMatrixFP, &Transform->ModelMatrix);
 }

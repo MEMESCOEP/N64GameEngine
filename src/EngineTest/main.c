@@ -33,9 +33,9 @@ T3DModel *FenceModel;
 T3DModel *GearModel;
 T3DModel *BushModel;
 T3DVec3 SunDirection = {{-1.0f, 1.0f, 1.0f}};
-color_t SkyColor = (color_t){0x87, 0xCE, 0xEB, 0xFF};
+color_t SkyColor = (color_t){0x1C, 0x2E, 0x4A, 0xFF};
 uint8_t AmbientColor[4] = {80, 80, 100, 0xFF};
-uint8_t SunColor[4] = {0xFD, 0xFB, 0xD3, 0xFF};
+uint8_t SunColor[4] = {0x2D, 0x43, 0x67, 0xFF};
 char *HeadModelPaths[4] = {"rom:/Pikachu.t3dm", "rom:/Mario.t3dm", "rom:/Link.t3dm", "rom:/FoxMcCloud.t3dm"};
 float FencePositions[4][2] = {{175.0f, 175.0f}, {175.0f, -175.0f}, {-175.0f, -175.0f}, {-175.0f, 175.0f}};
 float BushPositions[4][2] = {{175.0f, 175.0f}, {175.0f, -175.0f}, {-175.0f, -175.0f}, {-175.0f, 175.0f}};
@@ -81,7 +81,7 @@ int main()
 
     for (int ModelIndex = 0; ModelIndex < 4; ModelIndex++)
     {
-        HeadModels[ModelIndex] = t3d_model_load(HeadModelPaths[ModelIndex]);
+        //HeadModels[ModelIndex] = t3d_model_load(HeadModelPaths[ModelIndex]);
     }
 
     FloorModelTransform = CreateNewModelTransform();

@@ -35,9 +35,8 @@ long long LastFPSUpdate = 0;
 long long LastDeltaTime = 0;
 long long FPSStart = 0;
 long long DTStart = 0;
-float CameraClipping[2] = {3.0f, 200.0f};
+float CameraClipping[2] = {10.0f, 200.0f};
 float DeltaTime = 0.0f;
-int N64ClockSpeed = 93750000;
 int FPSCheckCount = 0;
 int FrameCount = 0;
 int TargetFPS = 60;
@@ -209,9 +208,7 @@ void AssignNewRenderBlock(struct ModelTransform *Transform, T3DModel *ModelToRen
     }
 
     rspq_block_begin();
-    //t3d_matrix_push(Transform->ModelMatrixFP);
     t3d_model_draw(ModelToRender);
-    //t3d_matrix_pop(1);
     Transform->RenderBlock = rspq_block_end();
 }
 
@@ -232,24 +229,6 @@ void SetTargetFPS(int Target)
     {
         debugf("[INFO] >> Set target FPS to %d.\n", Target);
     }
-}
-
-// Calculate milliseconds per frame for a given framerate
-float MSPFFromFPS(int FPSToConvert)
-{
-    return FPSToMS(FPSToConvert) / FPSToConvert;
-}
-
-// Convert milliseconds to timer ticks
-float MSToTicks(int MS)
-{
-    return TIMER_TICKS_LL(MS * 1000.0f);
-}
-
-// Determines the number of milliseconds in a given framerate
-float FPSToMS(int FPSToConvert)
-{
-    return TIMER_MICROS_LL(N64ClockSpeed / FPSToConvert) / 1000.0f;
 }
 
 // ----- Camera Functions -----

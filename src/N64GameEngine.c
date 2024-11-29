@@ -63,7 +63,13 @@ enum EngineDebugModes GetDebugMode()
     return CurrentDebugMode;
 }
 
-// Print a formatted or unformatted message.
+// Print a formatted or unformatted message to a console (only works if a console is available)
+// You can use the following format specifiers:
+//  %d -> Integer
+//  %f -> Float & double
+//  %s -> String
+//  %c -> Character
+//  %v -> Vector3 (T3DVec3)
 void DebugPrint(char *Message, enum EngineDebugModes DebugMode, ...)
 {
     if (CurrentDebugMode == NONE || (DebugMode == ALL && CurrentDebugMode == MINIMAL))
@@ -71,40 +77,48 @@ void DebugPrint(char *Message, enum EngineDebugModes DebugMode, ...)
 
     if (CurrentDebugMode == ALL || DebugMode == ALL || DebugMode == CurrentDebugMode)
     {
-        // This is kind of a janky way to do it
-        va_list arg_list;
-        va_start(arg_list, Message);
+        // This is essentially just a reimplementation of debugf with support for more types
+        va_list ArgList;
+        va_start(ArgList, Message);
 
-        while (*Message != '\0') {
-            if (*Message == '%') {
+        while (*Message != '\0')
+        {
+            if (*Message == '%')
+            {
                 Message++;
-                if (*Message == 'd') {
-                    int val = va_arg(arg_list, int);
-                    debugf("%d", val);
+
+                if (*Message == 'd')
+                {
+                    debugf("%d", va_arg(ArgList, int));
                 }
-                else if (*Message == 's') {
-                    char* val = va_arg(arg_list, char*);
-                    debugf("%s", val);
+                else if (*Message == 's')
+                {
+                    debugf("%s", va_arg(ArgList, char*));
                 }
-                else if (*Message == 'c') {
-                    char val = va_arg(arg_list, int);
-                    debugf("%c", val);
+                else if (*Message == 'c')
+                {
+                    debugf("%c", va_arg(ArgList, int));
                 }
-                else if (*Message == 'f') {
-                    double val = va_arg(arg_list, double);
-                    debugf("%f", val);
+                else if (*Message == 'f')
+                {
+                    debugf("%f", va_arg(ArgList, double));
                 }
+                else if (*Message == 'v')
+                {
+                    T3DVec3 Vector = va_arg(ArgList, T3DVec3);
+                    debugf("{X=%f, Y=%f, Z=%f}", Vector.v[0], Vector.v[1], Vector.v[2]);
+                }
+
                 Message++;
             }
-            else {
+            else
+            {
                 debugf("%c", *Message);
                 Message++;
             }
         }
-
-        // I could use this if debugf doesn't accept va_list as an argument
-        //debugf(Message, arg_list);
-        va_end(arg_list);
+        
+        va_end(ArgList);
     }
 }
 
@@ -153,6 +167,10 @@ void InitSystem(resolution_t Resolution, bitdepth_t BitDepth, uint32_t BufferNum
     debug_init_isviewer();
     debug_init_usblog();
 
+    DebugPrint("[== N64 Game Engine ==]\n", ALL);    
+    DebugPrint("[INFO] >> Initializing display (%dx%d @ %dBPP)...\n", MINIMAL, Resolution.width, Resolution.height, (BitDepth + 1) * 16);
+    display_init(Resolution, BitDepth, BufferNum, GAMMA_NONE, Filters);
+
     DebugPrint("[INFO] >> Initializing timer...\n", ALL);
     timer_init();
 
@@ -162,9 +180,6 @@ void InitSystem(resolution_t Resolution, bitdepth_t BitDepth, uint32_t BufferNum
     DebugPrint("[INFO] >> Initializing filesystem & assets...\n", ALL);
     asset_init_compression(2);
     dfs_init(DFS_DEFAULT_LOCATION);
-    
-    DebugPrint("[INFO] >> Initializing display (%dx%d @ %dBPP)...\n", MINIMAL, Resolution.width, Resolution.height, (BitDepth + 1) * 16);
-    display_init(Resolution, BitDepth, BufferNum, GAMMA_NONE, Filters);
 
     DebugPrint("[INFO] >> Initializing RDPQ...\n", ALL);
     rdpq_init();
@@ -265,11 +280,7 @@ void SetTargetFPS(int Target)
 {
     TargetFPS = Target;
     display_set_fps_limit(TargetFPS);
-
-    if (CurrentDebugMode == MINIMAL || CurrentDebugMode == ALL)
-    {
-        debugf("[INFO] >> Set target FPS to %d.\n", Target);
-    }
+    DebugPrint("[INFO] >> Set target FPS to %d.\n", MINIMAL, TargetFPS);
 }
 
 // ----- Camera Functions -----
@@ -370,6 +381,15 @@ void MoveCameraStrafe(struct CameraProperties *CamProps, float DistanceStep, boo
         t3d_vec3_add(&CamProps->Position, &CamProps->Position, &CamRightVector);
         t3d_vec3_add(&CamProps->Target, &CamProps->Target, &CamRightVector);
     }
+}
+
+// Moves the camera to a specific point in 3D space (X, Y, Z) while keeping its rotation the same
+void MoveCameraToPoint(struct CameraProperties *CamProps, T3DVec3)
+{
+    T3DVec3 TargetDifference;
+    
+    t3d_vec3_diff(&TargetDifference, &CamProps->Position, &CamProps->Target);
+    FancyPrintVector3(TargetDifference);
 }
 
 // ----- Drawing functions -----

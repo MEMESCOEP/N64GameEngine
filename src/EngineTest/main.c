@@ -31,9 +31,9 @@ rdpq_font_t *NewFont;
 T3DModel *HeadModels[4];
 T3DModel *FloorModel;
 T3DModel *FenceModel;
-T3DModel *GearModel;
 T3DModel *AxisModel;
 T3DModel *BushModel;
+T3DModel *GearModel;
 T3DVec3 SunDirection = {{-1.0f, 1.0f, 1.0f}};
 color_t SkyColor = (color_t){0x1C, 0x2E, 0x4A, 0xFF};
 uint8_t AmbientColor[4] = {80, 80, 100, 0xFF};
@@ -66,6 +66,8 @@ int main()
     // Initialize the system and Tiny3D
     // We use 320x240@16 here because in this case it strikes a balance between performance and video quality
     InitSystem(RESOLUTION_320x240, DEPTH_16_BPP, 3, FILTERS_RESAMPLE_ANTIALIAS, true);
+
+    debugf("\n[== N64 Game Engine Test Scene ==]\n");
     SetTargetFPS(60);
 
     DebugPrint("[INFO] >> Registering fonts...\n", MINIMAL);
@@ -85,9 +87,9 @@ int main()
     DebugPrint("[INFO] >> Loading models and setting up transforms...\n", MINIMAL);
     FloorModel = t3d_model_load("rom:/Floor.t3dm");
     FenceModel = t3d_model_load("rom:/Fence.t3dm");
-    GearModel = t3d_model_load("rom:/Gear.t3dm");
     AxisModel = t3d_model_load("rom:/XYZ.t3dm");
     BushModel = t3d_model_load("rom:/StretchyBush.t3dm");
+    GearModel = t3d_model_load("rom:/Gear.t3dm");
 
     for (int ModelIndex = 0; ModelIndex < 4; ModelIndex++)
     {
@@ -138,15 +140,10 @@ int main()
         NewTransform.Scale[2] = 0.5f;
 
         BushModelTransforms[BMIndex] = NewTransform;
-    }    
-    
-    // Rotate the camera downwards about 45 degrees
-    //RotateCameraRelative(0.0f, -45.0f, 0.0f, &CamProps);
-    //RotateVector3ByDegrees(&CamProps.Target, (T3DVec3){{45.0f, -45.0f, 0.0f}});
+    }
 
     DebugPrint("[INFO] >> Starting game loop...\n", MINIMAL);
 
-    // Game loop
     while (true)
     {
         // Update the viewport (screen projection and camera transform)
@@ -170,7 +167,7 @@ int main()
         {
             RotateCameraAroundPoint(15.0f * DeltaTime, &CamProps, (T3DVec3){{0.0f, -50.0f, 0.0f}});
         }
-        else
+        else if (CameraMode == 1)
         {
             RotateCameraRelative(Input.StickStateNormalized[0] * CameraControlSpeed * DeltaTime, Input.StickStateNormalized[1] * CameraControlSpeed * DeltaTime, 0.0f, &CamProps);
 
@@ -185,7 +182,7 @@ int main()
                 {
                     MoveCameraLateral(&CamProps.Position, &CamProps.Target, 50.0f * DeltaTime, false);
                 }
-            }
+            }DebugPrint("[INFO] >> Changing camera mode to %d...\n", MINIMAL, CameraMode);
 
             if (Input.HeldButtons.d_down)
             {
@@ -235,14 +232,21 @@ int main()
         // Switch between camera modes
         //  0: Rotate around the center of the screen
         //  1: Manual control
+        //  2: Static
         if (Input.PressedButtons.a)
         {
             CameraMode++;
 
-            if (CameraMode > 1) CameraMode = 0;
+            if (CameraMode > 2) CameraMode = 0;
             if (CameraMode == 0)
             {
                 CamProps.Position = (T3DVec3){{0.0f, -25.0f, 125.0f}};
+                CamProps.Target = (T3DVec3){{0.0f, -50.0f, 0.0f}};
+            }
+            else if (CameraMode == 2)
+            {
+                MoveCameraToPoint(&CamProps, (T3DVec3){{175.0f, 0.0f, 175.0f}});
+                CamProps.Position = (T3DVec3){{175.0f, 0.0f, 175.0f}};
                 CamProps.Target = (T3DVec3){{0.0f, -50.0f, 0.0f}};
             }
 

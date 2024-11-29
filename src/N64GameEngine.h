@@ -111,6 +111,7 @@ void RotateCameraAroundPoint(float RotationAngle, struct CameraProperties *CamPr
 void MoveCameraVertical(struct CameraProperties *CamProps, float DistanceStep, bool UseWorldUp);
 void MoveCameraLateral(T3DVec3 *CameraPosition, T3DVec3 *CameraTarget, float DistanceStep, bool UseWorldForward);
 void MoveCameraStrafe(struct CameraProperties *CamProps, float DistanceStep, bool UseWorldRight);
+void MoveCameraToPoint(struct CameraProperties *CamProps, T3DVec3);
 
 // ----- Drawing functions -----
 void DrawString(char* Text, int FontID, int XPos, int YPos);

@@ -19,6 +19,7 @@
 /* VARIABLES */
 struct CameraProperties CamProps;
 struct ControllerState Input;
+struct ModelTransform CameraForwardTransform;
 struct ModelTransform FloorModelTransform;
 struct ModelTransform FenceModelTransform;
 struct ModelTransform GearModelTransform1;
@@ -31,6 +32,7 @@ T3DModel *HeadModels[4];
 T3DModel *FloorModel;
 T3DModel *FenceModel;
 T3DModel *GearModel;
+T3DModel *AxisModel;
 T3DModel *BushModel;
 T3DVec3 SunDirection = {{-1.0f, 1.0f, 1.0f}};
 color_t SkyColor = (color_t){0x1C, 0x2E, 0x4A, 0xFF};
@@ -40,8 +42,10 @@ char *HeadModelPaths[4] = {"rom:/Pikachu.t3dm", "rom:/Mario.t3dm", "rom:/Link.t3
 float FencePositions[4][2] = {{175.0f, 175.0f}, {175.0f, -175.0f}, {-175.0f, -175.0f}, {-175.0f, 175.0f}};
 float BushPositions[4][2] = {{175.0f, 175.0f}, {175.0f, -175.0f}, {-175.0f, -175.0f}, {-175.0f, 175.0f}};
 float HeadPositions[4][2] = {{175.0f, 175.0f}, {175.0f, -175.0f}, {-175.0f, -175.0f}, {-175.0f, 175.0f}};
+float CameraControlSpeed = 100.0f;
 float RotationSpeed = 0.25f;
 float ModelAngle = 0.0f;
+bool DrawAxisModel = false;
 int CameraMode = 0;
 int DebugMode = 1;
 
@@ -57,33 +61,46 @@ color_t GetRainbowColor(float s) {
 int main()
 {
     // Set the engine's debug mode to minimal output
-    SetDebugMode(MINIMAL);
+    SetDebugMode(ALL);
 
     // Initialize the system and Tiny3D
     // We use 320x240@16 here because in this case it strikes a balance between performance and video quality
     InitSystem(RESOLUTION_320x240, DEPTH_16_BPP, 3, FILTERS_RESAMPLE_ANTIALIAS, true);
     SetTargetFPS(60);
+
+    DebugPrint("[INFO] >> Registering fonts...\n", MINIMAL);
     NewFont = RegisterFont("rom:/DEBUG.font64", 1);
     Viewport = t3d_viewport_create();
 
     t3d_vec3_norm(&SunDirection);
     
     // Set up the camera
+    DebugPrint("[INFO] >> Setting up camera...\n", MINIMAL);
     CamProps = DefaultCameraProperties;
     CamProps.Position = (T3DVec3){{0.0f, -25.0f, 125.0f}};
     CamProps.Target = (T3DVec3){{0.0f, -50.0f, 0.0f}};
     CamProps.FOV = 90.0f;
 
     // Load models and set up transforms
+    DebugPrint("[INFO] >> Loading models and setting up transforms...\n", MINIMAL);
     FloorModel = t3d_model_load("rom:/Floor.t3dm");
     FenceModel = t3d_model_load("rom:/Fence.t3dm");
     GearModel = t3d_model_load("rom:/Gear.t3dm");
+    AxisModel = t3d_model_load("rom:/XYZ.t3dm");
     BushModel = t3d_model_load("rom:/StretchyBush.t3dm");
 
     for (int ModelIndex = 0; ModelIndex < 4; ModelIndex++)
     {
         //HeadModels[ModelIndex] = t3d_model_load(HeadModelPaths[ModelIndex]);
     }
+
+    CameraForwardTransform = CreateNewModelTransform();
+    CameraForwardTransform.Position[0] = CamProps.Target.v[0];
+    CameraForwardTransform.Position[1] = CamProps.Target.v[1];
+    CameraForwardTransform.Position[2] = CamProps.Target.v[2];
+    CameraForwardTransform.Scale[0] = 0.1f;
+    CameraForwardTransform.Scale[1] = 0.1f;
+    CameraForwardTransform.Scale[2] = 0.1f;
 
     // This scale may need to be tweaked to prevent "jitter" and texture distortion
     FloorModelTransform = CreateNewModelTransform();
@@ -127,6 +144,8 @@ int main()
     //RotateCameraRelative(0.0f, -45.0f, 0.0f, &CamProps);
     //RotateVector3ByDegrees(&CamProps.Target, (T3DVec3){{45.0f, -45.0f, 0.0f}});
 
+    DebugPrint("[INFO] >> Starting game loop...\n", MINIMAL);
+
     // Game loop
     while (true)
     {
@@ -138,7 +157,10 @@ int main()
         ModelAngle += 1.5f * DeltaTime;
         GearModelTransform1.Rotation[0] = ModelAngle * RotationSpeed;
         GearModelTransform1.Rotation[1] = ModelAngle * RotationSpeed;
-        GearModelTransform1.Rotation[2] = ModelAngle * RotationSpeed * 4.0f;    
+        GearModelTransform1.Rotation[2] = ModelAngle * RotationSpeed * 4.0f;
+        CameraForwardTransform.Position[0] = CamProps.Target.v[0];
+        CameraForwardTransform.Position[1] = CamProps.Target.v[1];
+        CameraForwardTransform.Position[2] = CamProps.Target.v[2];
 
         // Read controller input from port 1
         GetControllerInput(&Input, JOYPAD_PORT_1);
@@ -147,28 +169,67 @@ int main()
         if (CameraMode == 0)
         {
             RotateCameraAroundPoint(15.0f * DeltaTime, &CamProps, (T3DVec3){{0.0f, -50.0f, 0.0f}});
-            CamProps.Target = (T3DVec3){{0.0f, -50.0f, 0.0f}};
         }
         else
         {
-            RotateCameraRelative(Input.StickStateNormalized[0] * 75.0f * DeltaTime, Input.StickStateNormalized[1] * 75.0f * DeltaTime, 0.0f, &CamProps);
+            RotateCameraRelative(Input.StickStateNormalized[0] * CameraControlSpeed * DeltaTime, Input.StickStateNormalized[1] * CameraControlSpeed * DeltaTime, 0.0f, &CamProps);
 
             // Move the camera
             if (Input.HeldButtons.d_up)
             {
-                CamProps.Position = t3d_vec3_dot(CamProps.Position, GetCameraForwardVector(CamProps.Position, CamProps.Target));
+                if (Input.HeldButtons.b)
+                {
+                    MoveCameraVertical(&CamProps, 50.0f * DeltaTime, false);
+                }
+                else
+                {
+                    MoveCameraLateral(&CamProps.Position, &CamProps.Target, 50.0f * DeltaTime, false);
+                }
             }
-        }    
+
+            if (Input.HeldButtons.d_down)
+            {
+                if (Input.HeldButtons.b)
+                {
+                    MoveCameraVertical(&CamProps, -50.0f * DeltaTime, false);
+                }
+                else
+                {
+                    MoveCameraLateral(&CamProps.Position, &CamProps.Target, -50.0f * DeltaTime, false);
+                }
+            }
+
+            if (Input.HeldButtons.d_left)
+            {
+                MoveCameraStrafe(&CamProps, -50.0f * DeltaTime, false);
+            }
+
+            if (Input.HeldButtons.d_right)
+            {
+                MoveCameraStrafe(&CamProps, 50.0f * DeltaTime, false);
+            }
+        }
 
         // Switch between debug modes
         //  0: No debug info is displayed
         //  1: Minimal debug info is displayed (MEM, Uptime, FPS)
         //  2: All debug info is displayed (Info from 1, Camera properties, stick input)
-        if (Input.PressedButtons.b)
+        if (Input.PressedButtons.z)
         {
-            DebugMode++;
+            // Toggle the 3D axis model if the B button is held. Otherwise, change the debug mode
+            if (Input.HeldButtons.b)
+            {
+                DrawAxisModel = !DrawAxisModel;
+                DebugPrint("[INFO] >> %s drawing of axis model.\n", MINIMAL, DrawAxisModel == true ? "Enabled" : "Disabled");
+            }
+            else
+            {
+                DebugMode++;
 
-            if (DebugMode > 2) DebugMode = 0;
+                if (DebugMode > 2) DebugMode = 0;
+
+                DebugPrint("[INFO] >> Set debug mode to %d.\n", MINIMAL, DebugMode);
+            }
         }
 
         // Switch between camera modes
@@ -179,6 +240,13 @@ int main()
             CameraMode++;
 
             if (CameraMode > 1) CameraMode = 0;
+            if (CameraMode == 0)
+            {
+                CamProps.Position = (T3DVec3){{0.0f, -25.0f, 125.0f}};
+                CamProps.Target = (T3DVec3){{0.0f, -50.0f, 0.0f}};
+            }
+
+            DebugPrint("[INFO] >> Changing camera mode to %d...\n", MINIMAL, CameraMode);
         }
 
         // Start the frame and enter 3D mode
@@ -203,6 +271,15 @@ int main()
         rdpq_set_prim_color(GetRainbowColor(ModelAngle * 0.24f));
         RenderModel(GearModel, &GearModelTransform1, true);
 
+        // Draw the Axis ("XYZ") model if it's enabled. We disable the Z buffer before we draw this so it will appear in top of everything.
+        // It's important that we only disable the Z buffer and draw this model AFTER everything else has been drawn, because otherwise
+        // everything would break and be drawn with no depth.
+        if (DrawAxisModel == true)
+        {
+            rdpq_mode_zbuf(false, false);
+            RenderModel(AxisModel, &CameraForwardTransform, true);
+        }
+
         // Enter 2D mode
         // All 2D graphics operations should (usually) take place in 2D mode
         Start2DMode();
@@ -217,13 +294,14 @@ int main()
             
             if (DebugMode == 2)
             {
-                T3DVec3 CamForwardVector = GetCameraForwardVector(CamProps.Position, CamProps.Target);
+                T3DVec3 CamForwardVector = GetForwardVector(CamProps.Position, CamProps.Target);
 
                 rdpq_text_printf(NULL, 1, 5, 48, "CAM TGT: %.3f, %.3f, %.3f", CamProps.Target.v[0], CamProps.Target.v[1], CamProps.Target.v[2]);
                 rdpq_text_printf(NULL, 1, 5, 60, "CAM POS: %.3f, %.3f, %.3f", CamProps.Position.v[0], CamProps.Position.v[1], CamProps.Position.v[2]);
                 rdpq_text_printf(NULL, 1, 5, 72, "UP DIR: %.3f, %.3f, %.3f", CamProps.UpDir.v[0], CamProps.UpDir.v[1], CamProps.UpDir.v[2]);
                 rdpq_text_printf(NULL, 1, 5, 84, "CAM FWD: %.3f, %.3f, %.3f", CamForwardVector.v[0], CamForwardVector.v[1], CamForwardVector.v[2]);
-                rdpq_text_printf(NULL, 1, 5, 96, "STICK: X=%f || Y=%f", Input.StickStateNormalized[0], Input.StickStateNormalized[1]);
+                rdpq_text_printf(NULL, 1, 5, 96, "STICK NORM: X=%f || Y=%f", Input.StickStateNormalized[0], Input.StickStateNormalized[1]);
+                rdpq_text_printf(NULL, 1, 5, 108, "STICK: X=%d || Y=%d", Input.StickState[0], Input.StickState[1]);
             }
         }
 

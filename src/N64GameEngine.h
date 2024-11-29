@@ -68,6 +68,7 @@ struct ModelTransform
 extern struct CameraProperties DefaultCameraProperties;
 extern heap_stats_t HeapStats;
 extern rspq_block_t *DrawCommands;
+extern T3DVec3 WorldUpVector;
 extern float CameraClipping[2];
 extern float DeltaTime;
 extern float FOV3D;
@@ -80,9 +81,10 @@ extern int FPS;
 // ----- Debug functions -----
 void SetDebugMode(enum EngineDebugModes DebugMode);
 enum EngineDebugModes GetDebugMode();
-void DebugPrint(char *Message, enum EngineDebugModes DebugMode);
+void DebugPrint(char *Message, enum EngineDebugModes DebugMode, ...);
 void FancyPrintMatrixFP(T3DMat4FP MatrixFP);
 void FancyPrintMatrix(T3DMat4 Matrix);
+void FancyPrintVector3(T3DVec3 Vector);
 
 // ----- Engine functions -----
 void InitSystem(resolution_t Resolution, bitdepth_t BitDepth, uint32_t BufferNum, filter_options_t Filters, bool Init3D);
@@ -106,6 +108,9 @@ float FPSToMS(int FPSToConvert);
 void RotateCameraToAngle(float XAngle, float YAngle, struct CameraProperties *CamProps);
 void RotateCameraRelative(float XAngle, float YAngle, float ZAngle, struct CameraProperties *CamProps);
 void RotateCameraAroundPoint(float RotationAngle, struct CameraProperties *CamProps, T3DVec3 PointToRotateAround);
+void MoveCameraVertical(struct CameraProperties *CamProps, float DistanceStep, bool UseWorldUp);
+void MoveCameraLateral(T3DVec3 *CameraPosition, T3DVec3 *CameraTarget, float DistanceStep, bool UseWorldForward);
+void MoveCameraStrafe(struct CameraProperties *CamProps, float DistanceStep, bool UseWorldRight);
 
 // ----- Drawing functions -----
 void DrawString(char* Text, int FontID, int XPos, int YPos);

@@ -8,6 +8,8 @@
 
 
 /* LIBRARIES */
+#include <stdarg.h>
+#include <unistd.h>
 #include <libdragon.h>
 #include <t3d/t3d.h>
 #include <t3d/t3dmath.h>
@@ -25,18 +27,19 @@ struct CameraProperties DefaultCameraProperties = {
     70.0f
 };
 
-enum EngineDebugModes CurrentDebugMode = NONE;
+enum EngineDebugModes CurrentDebugMode = MINIMAL;
 heap_stats_t HeapStats;
 rspq_block_t *DrawCommands = NULL;
 surface_t *DisplaySurface = NULL;
 surface_t *DepthBuffer;
+T3DVec3 WorldUpVector = {{0.0f, 1.0f, 0.0f}};
 long long LastHeapStatsUpdate = 0;
 long long LastFPSUpdate = 0;
 long long LastDeltaTime = 0;
 long long FPSStart = 0;
 long long DTStart = 0;
 float CameraClipping[2] = {10.0f, 200.0f};
-float JoystickRange[2] = {0.0f, 85.0f};
+float JoystickRange = 65.0f; // This is used to reduce erroneous inputs (EX: The player isn't touching a joystick but it still responds with a very small value)
 float DeltaTime = 0.0f;
 int FPSCheckCount = 0;
 int FrameCount = 0;
@@ -60,14 +63,48 @@ enum EngineDebugModes GetDebugMode()
     return CurrentDebugMode;
 }
 
-void DebugPrint(char *Message, enum EngineDebugModes DebugMode)
+// Print a formatted or unformatted message.
+void DebugPrint(char *Message, enum EngineDebugModes DebugMode, ...)
 {
-    if (CurrentDebugMode == NONE || (DebugMode == MINIMAL && CurrentDebugMode == ALL))
+    if (CurrentDebugMode == NONE || (DebugMode == ALL && CurrentDebugMode == MINIMAL))
         return;
 
-    if (DebugMode == ALL || DebugMode == CurrentDebugMode)
+    if (CurrentDebugMode == ALL || DebugMode == ALL || DebugMode == CurrentDebugMode)
     {
-        debugf(Message);
+        // This is kind of a janky way to do it
+        va_list arg_list;
+        va_start(arg_list, Message);
+
+        while (*Message != '\0') {
+            if (*Message == '%') {
+                Message++;
+                if (*Message == 'd') {
+                    int val = va_arg(arg_list, int);
+                    debugf("%d", val);
+                }
+                else if (*Message == 's') {
+                    char* val = va_arg(arg_list, char*);
+                    debugf("%s", val);
+                }
+                else if (*Message == 'c') {
+                    char val = va_arg(arg_list, int);
+                    debugf("%c", val);
+                }
+                else if (*Message == 'f') {
+                    double val = va_arg(arg_list, double);
+                    debugf("%f", val);
+                }
+                Message++;
+            }
+            else {
+                debugf("%c", *Message);
+                Message++;
+            }
+        }
+
+        // I could use this if debugf doesn't accept va_list as an argument
+        //debugf(Message, arg_list);
+        va_end(arg_list);
     }
 }
 
@@ -89,6 +126,7 @@ void DebugPrint(char *Message, enum EngineDebugModes DebugMode)
     }
 }*/
 
+// Print the contents of a 4x4 matrix
 void FancyPrintMatrix(T3DMat4 Matrix)
 {
     for (int Y = 0; Y < 4; Y++)
@@ -100,6 +138,12 @@ void FancyPrintMatrix(T3DMat4 Matrix)
 
         debugf("\n");
     }
+}
+
+// Print the contents of a 3D vector
+void FancyPrintVector3(T3DVec3 Vector)
+{
+    debugf("X=%.3f || Y=%.3f || Z=%.3f\n", Vector.v[0], Vector.v[1], Vector.v[2]);
 }
 
 // ----- Engine functions -----
@@ -118,12 +162,8 @@ void InitSystem(resolution_t Resolution, bitdepth_t BitDepth, uint32_t BufferNum
     DebugPrint("[INFO] >> Initializing filesystem & assets...\n", ALL);
     asset_init_compression(2);
     dfs_init(DFS_DEFAULT_LOCATION);
-
-    if (CurrentDebugMode == MINIMAL || CurrentDebugMode == ALL)
-    {
-        debugf("[INFO] >> Initializing display (%ldx%ld @ %dBPP)...\n", Resolution.width, Resolution.height, (BitDepth + 1) * 16);
-    }
     
+    DebugPrint("[INFO] >> Initializing display (%dx%d @ %dBPP)...\n", MINIMAL, Resolution.width, Resolution.height, (BitDepth + 1) * 16);
     display_init(Resolution, BitDepth, BufferNum, GAMMA_NONE, Filters);
 
     DebugPrint("[INFO] >> Initializing RDPQ...\n", ALL);
@@ -132,7 +172,7 @@ void InitSystem(resolution_t Resolution, bitdepth_t BitDepth, uint32_t BufferNum
     DebugPrint("[INFO] >> Initializing Tiny3D...\n", ALL);
     t3d_init((T3DInitParams){});
 
-    DebugPrint("[INFO] >> All init stages done.\n", ALL);
+    DebugPrint("[INFO] >> All engine init stages done.\n", ALL);
 }
 
 // Update all engine data when required
@@ -281,6 +321,57 @@ void RotateCameraAroundPoint(float RotationAngle, struct CameraProperties *CamPr
     CamProps->Target.v[1] = PointToRotateAround.v[1];
 }
 
+// Moves the camera up and down along its local or world up vector
+void MoveCameraVertical(struct CameraProperties *CamProps, float DistanceStep, bool UseWorldUp)
+{
+    T3DVec3 CamUpVector = WorldUpVector;
+ 
+    if (UseWorldUp == false)
+    {
+        T3DVec3 CamForwardVector = GetForwardVector(CamProps->Position, CamProps->Target);
+        CamUpVector = GetUpVector(CamForwardVector, GetRightVector(CamForwardVector));
+    }
+
+    t3d_vec3_scale(&CamUpVector, &CamUpVector, DistanceStep);
+    t3d_vec3_add(&CamProps->Position, &CamProps->Position, &CamUpVector);
+    t3d_vec3_add(&CamProps->Target, &CamProps->Target, &CamUpVector);
+}
+
+// Moves the camera along its local or world forward vector
+void MoveCameraLateral(T3DVec3 *CameraPosition, T3DVec3 *CameraTarget, float DistanceStep, bool UseWorldForward)
+{
+    if (UseWorldForward == true)
+    {
+        
+    }
+    else
+    {
+        T3DVec3 CamForwardVector = GetForwardVector(*CameraPosition, *CameraTarget);
+
+        t3d_vec3_scale(&CamForwardVector, &CamForwardVector, DistanceStep);
+        t3d_vec3_add(CameraPosition, CameraPosition, &CamForwardVector);
+        t3d_vec3_add(CameraTarget, CameraTarget, &CamForwardVector);
+    }
+}
+
+// Moves the camera side to side along its local or world right vector
+void MoveCameraStrafe(struct CameraProperties *CamProps, float DistanceStep, bool UseWorldRight)
+{
+    if (UseWorldRight == true)
+    {
+        
+    }
+    else
+    {
+        T3DVec3 CamForwardVector = GetForwardVector(CamProps->Position, CamProps->Target);
+        T3DVec3 CamRightVector = GetRightVector(CamForwardVector);
+
+        t3d_vec3_scale(&CamRightVector, &CamRightVector, DistanceStep);
+        t3d_vec3_add(&CamProps->Position, &CamProps->Position, &CamRightVector);
+        t3d_vec3_add(&CamProps->Target, &CamProps->Target, &CamRightVector);
+    }
+}
+
 // ----- Drawing functions -----
 // Draws a string on the screen at the specified X & Y coords, and font
 void DrawString(char* Text, int FontID, int XPos, int YPos)
@@ -393,8 +484,11 @@ void Start2DMode()
 }
 
 // ----- Input functions -----
+// Get input from a controller at the specified port.
+// There are usually only 4 ports available for reading, and can be addressed using any integer between (and including) 0 and 3
 void GetControllerInput(struct ControllerState *StructToUpdate, int ControllerPort)
 {
+    // Don't do anything if the controller isn't connected
     if (joypad_is_connected(ControllerPort) == false)
     {
         return;
@@ -403,11 +497,18 @@ void GetControllerInput(struct ControllerState *StructToUpdate, int ControllerPo
     joypad_poll();
     joypad_inputs_t StickState = joypad_get_inputs(ControllerPort);
 
+    // Ensure the joystick value is between a certain range.
+    // This eliminates erroneous inputs (EX: The player isn't touching a joystick but it still responds with a very small value) 
+    float StickValuesInRange[2] = {
+        ZeroBelowMinimum(ABS(StickState.stick_x), JoystickRange * 0.15f) * SIGN(StickState.stick_x),
+        ZeroBelowMinimum(ABS(StickState.stick_y), JoystickRange * 0.15f) * SIGN(StickState.stick_y)
+    };
+
     StructToUpdate->ReleasedButtons = joypad_get_buttons_released(ControllerPort);
     StructToUpdate->PressedButtons = joypad_get_buttons_pressed(ControllerPort);
-    StructToUpdate->HeldButtons = joypad_get_buttons(ControllerPort);
-    StructToUpdate->StickStateNormalized[0] = StickState.stick_x / JoystickRange[1];
-    StructToUpdate->StickStateNormalized[1] = StickState.stick_y / JoystickRange[1];
-    StructToUpdate->StickState[0] = StickState.stick_x;
-    StructToUpdate->StickState[1] = StickState.stick_y;
+    StructToUpdate->HeldButtons = joypad_get_buttons(ControllerPort);    
+    StructToUpdate->StickStateNormalized[0] = UnsignedKeepInRange(StickValuesInRange[0] / JoystickRange, 0.0f, 1.0f);
+    StructToUpdate->StickStateNormalized[1] = UnsignedKeepInRange(StickValuesInRange[1] / JoystickRange, 0.0f, 1.0f);
+    StructToUpdate->StickState[0] = StickValuesInRange[0];
+    StructToUpdate->StickState[1] = StickValuesInRange[1];
 }

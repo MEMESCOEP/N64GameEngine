@@ -11,6 +11,7 @@
 #include <t3d/t3d.h>
 #include <t3d/t3dmath.h>
 #include "N64GameEngine.h"
+#include "MathUtils.h"
 
 
 /* FUNCTIONS */
@@ -50,6 +51,33 @@ void RotateVector3ByDegrees(T3DVec3 *Vector3ToRotate, T3DVec3 RotationDegrees)
     RotateVectorAxisZ(Vector3ToRotate, RotationDegrees.v[2]);
 }
 
+// Multiply the X, Y, and Z axes by a value
+void MultiplyAxesByFloat(T3DVec3 *VectorToUpdate, T3DVec3 AxesToUpdate, float MultiplyValue)
+{
+    VectorToUpdate->v[0] = VectorToUpdate->v[0] * (MultiplyValue * AxesToUpdate.v[0] != 0 ? MultiplyValue : 1.0f);
+    VectorToUpdate->v[0] = VectorToUpdate->v[1] * (MultiplyValue * AxesToUpdate.v[1] != 0 ? MultiplyValue : 1.0f);
+    VectorToUpdate->v[0] = VectorToUpdate->v[2] * (MultiplyValue * AxesToUpdate.v[2] != 0 ? MultiplyValue : 1.0f);
+}
+
+// Add a value to the X, Y, and Z axes
+void AddFloatToAxes(T3DVec3 *VectorToUpdate, T3DVec3 AxesToUpdate, float ValueToAdd)
+{
+    VectorToUpdate->v[0] = VectorToUpdate->v[0] + (ValueToAdd * AxesToUpdate.v[0]);
+    VectorToUpdate->v[1] = VectorToUpdate->v[1] + (ValueToAdd * AxesToUpdate.v[1]);
+    VectorToUpdate->v[2] = VectorToUpdate->v[2] + (ValueToAdd * AxesToUpdate.v[2]);
+}
+
+// Set all zeroes in a vector to one
+// This is useful for cases where you need to multiply by a vector, and your axes to update are zero.
+void OneifyVectorZeroes(T3DVec3 *VectorToUpdate)
+{
+    for (int AxisIndex = 0; AxisIndex < 3; AxisIndex++)
+    {
+        if (VectorToUpdate->v[AxisIndex] == 0.0f) VectorToUpdate->v[AxisIndex] = 1.0f;
+    }
+}
+
+
 // Get a point on a unit circle using a position and an angle
 T3DVec3 Vec3UnitCirclePointFromAngle(float HorizontalDegrees, float VerticalDegrees, T3DVec3 CenterPoint)
 {
@@ -66,14 +94,36 @@ T3DVec3 Vec3UnitCirclePointFromAngle(float HorizontalDegrees, float VerticalDegr
     return ResultingVector;
 }
 
-// Get the forward vector of the camera
-T3DVec3 GetCameraForwardVector(T3DVec3 CameraPosition, T3DVec3 CameraTarget)
+// Get the normalized forward vector from two positions
+T3DVec3 GetForwardVector(T3DVec3 Position1, T3DVec3 Position2)
 {
     T3DVec3 ResultingVector;
 
-    // t3d_vec3_diff subtracts one vector from another
-    t3d_vec3_diff(&ResultingVector, &CameraTarget, &CameraPosition);
+    t3d_vec3_diff(&ResultingVector, &Position2, &Position1);
     t3d_vec3_norm(&ResultingVector);
+
+    return ResultingVector;
+}
+
+// Get the normalized right vector from two positions
+T3DVec3 GetRightVector(T3DVec3 ForwardVector)
+{
+    T3DVec3 ResultingVector;
+
+    t3d_vec3_cross(&ResultingVector, &ForwardVector, &WorldUpVector);
+    t3d_vec3_norm(&ResultingVector);
+
+    return ResultingVector;
+}
+
+// Get the normalized up vector from two positions
+T3DVec3 GetUpVector(T3DVec3 ForwardVector, T3DVec3 RightVector)
+{
+    T3DVec3 ResultingVector;
+
+    t3d_vec3_cross(&ResultingVector, &RightVector, &ForwardVector);
+    t3d_vec3_norm(&ResultingVector);
+
     return ResultingVector;
 }
 
@@ -96,4 +146,31 @@ void UpdateTransformMatrix(struct ModelTransform *Transform)
 {
     Transform->ModelMatrix = CreateSRTMatrix(Transform->Position, Transform->Rotation, Transform->Scale);
     t3d_mat4_to_fixed(Transform->ModelMatrixFP, &Transform->ModelMatrix);
+}
+
+// ----- Range math -----
+// Return zero if a number is below the minimum
+float ZeroBelowMinimum(float Number, float Minimum)
+{
+    return Number >= Minimum ? Number : 0.0f;
+}
+
+// Return zero if a number is above the maximum
+float ZeroAboveMaximum(float Number, float Maximum)
+{
+    return Number <= Maximum ? Number : 0.0f;
+}
+
+// Keep a number between a range, regardless of the input number's sign. The returned float will still have the same sign as the input.
+float UnsignedKeepInRange(float Number, float Minimum, float Maximum)
+{
+    float ABSNumber = ABS(Number);
+    int NumSign = SIGN(Number);
+
+    if (NumSign == 0)
+    {
+        NumSign = 1;
+    }
+
+    return MAX(MIN(ABSNumber, Maximum), Minimum) * NumSign;
 }

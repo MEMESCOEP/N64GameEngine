@@ -82,9 +82,6 @@ extern int FPS;
 void SetDebugMode(enum EngineDebugModes DebugMode);
 enum EngineDebugModes GetDebugMode();
 void DebugPrint(char *Message, enum EngineDebugModes DebugMode, ...);
-void FancyPrintMatrixFP(T3DMat4FP MatrixFP);
-void FancyPrintMatrix(T3DMat4 Matrix);
-void FancyPrintVector3(T3DVec3 Vector);
 
 // ----- Engine functions -----
 void InitSystem(resolution_t Resolution, bitdepth_t BitDepth, uint32_t BufferNum, filter_options_t Filters, bool Init3D);

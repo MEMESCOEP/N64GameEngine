@@ -70,6 +70,7 @@ enum EngineDebugModes GetDebugMode()
 //  %s -> String
 //  %c -> Character
 //  %v -> Vector3 (T3DVec3)
+//  %m -> 4x4 Matrix (T3DMat4)
 void DebugPrint(char *Message, enum EngineDebugModes DebugMode, ...)
 {
     if (CurrentDebugMode == NONE || (DebugMode == ALL && CurrentDebugMode == MINIMAL))
@@ -108,6 +109,20 @@ void DebugPrint(char *Message, enum EngineDebugModes DebugMode, ...)
                     T3DVec3 Vector = va_arg(ArgList, T3DVec3);
                     debugf("{X=%f, Y=%f, Z=%f}", Vector.v[0], Vector.v[1], Vector.v[2]);
                 }
+                else if (*Message == 'm')
+                {
+                    T3DMat4 Matrix = va_arg(ArgList, T3DMat4);
+                    
+                    for (int Y = 0; Y < 4; Y++)
+                    {
+                        for (int X = 0; X < 4; X++)
+                        {
+                            debugf("[%f] ", Matrix.m[Y][X]);
+                        }
+
+                        debugf("\n");
+                    }
+                }
 
                 Message++;
             }
@@ -122,44 +137,6 @@ void DebugPrint(char *Message, enum EngineDebugModes DebugMode, ...)
     }
 }
 
-/*void ConsolePrint(char* Message)
-{
-    debugf("    BushPosIndex %d\n", BushPosIndex);
-}*/
-
-/*void FancyPrintMatrixFP(T3DMat4FP MatrixFP)
-{
-    for (int Y = 0; Y < 4; Y++)
-    {
-        for (int X = 0; X < 4; X++)
-        {
-            debugf("[%.2f] ", MatrixFP.m[Y][X]);
-        }
-
-        debugf("\n");
-    }
-}*/
-
-// Print the contents of a 4x4 matrix
-void FancyPrintMatrix(T3DMat4 Matrix)
-{
-    for (int Y = 0; Y < 4; Y++)
-    {
-        for (int X = 0; X < 4; X++)
-        {
-            debugf("[%.2f] ", Matrix.m[Y][X]);
-        }
-
-        debugf("\n");
-    }
-}
-
-// Print the contents of a 3D vector
-void FancyPrintVector3(T3DVec3 Vector)
-{
-    debugf("X=%.3f || Y=%.3f || Z=%.3f\n", Vector.v[0], Vector.v[1], Vector.v[2]);
-}
-
 // ----- Engine functions -----
 // Initializes the display, debug, timer, rdpq, etc
 void InitSystem(resolution_t Resolution, bitdepth_t BitDepth, uint32_t BufferNum, filter_options_t Filters, bool Init3D)
@@ -170,6 +147,7 @@ void InitSystem(resolution_t Resolution, bitdepth_t BitDepth, uint32_t BufferNum
     DebugPrint("[== N64 Game Engine ==]\n", ALL);    
     DebugPrint("[INFO] >> Initializing display (%dx%d @ %dBPP)...\n", MINIMAL, Resolution.width, Resolution.height, (BitDepth + 1) * 16);
     display_init(Resolution, BitDepth, BufferNum, GAMMA_NONE, Filters);
+    SetTargetFPS(60);
 
     DebugPrint("[INFO] >> Initializing timer...\n", ALL);
     timer_init();
@@ -177,7 +155,7 @@ void InitSystem(resolution_t Resolution, bitdepth_t BitDepth, uint32_t BufferNum
     DebugPrint("[INFO] >> Initializing controllers...\n", ALL);
     controller_init();
 
-    DebugPrint("[INFO] >> Initializing filesystem & assets...\n", ALL);
+    DebugPrint("[INFO] >> Initializing filesystem & assets (DEFAULT LOCATION: %d)...\n", ALL, DFS_DEFAULT_LOCATION);
     asset_init_compression(2);
     dfs_init(DFS_DEFAULT_LOCATION);
 
@@ -297,15 +275,16 @@ void RotateCameraToAngle(float XAngle, float YAngle, struct CameraProperties *Ca
 // Rotate the camera by x degrees (relative to its current angles)
 void RotateCameraRelative(float XAngle, float YAngle, float ZAngle, struct CameraProperties *CamProps)
 {
+    float USRadius = VectorDistance(CamProps->Position, CamProps->Target);
     float XRadians = T3D_DEG_TO_RAD(XAngle);
     float YRadians = T3D_DEG_TO_RAD(YAngle);
     float ZRadians = T3D_DEG_TO_RAD(ZAngle);
-    T3DVec3 TargetRotation;
+    T3DVec3 TargetRotation = (T3DVec3){{0.0f, 0.0f, 0.0f}};
 
     // Calculate the direction from the camera to the target
     TargetRotation.v[0] = CamProps->Target.v[0] - CamProps->Position.v[0];
     TargetRotation.v[2] = CamProps->Target.v[2] - CamProps->Position.v[2];
-    //t3d_vec3_norm(&TargetRotation);
+    t3d_vec3_norm(&TargetRotation);
 
     // Left / Right rotation
     CamProps->Target.v[0] = CamProps->Position.v[0] + (TargetRotation.v[0] * cos(XRadians) - TargetRotation.v[2] * sin(XRadians));
@@ -313,11 +292,8 @@ void RotateCameraRelative(float XAngle, float YAngle, float ZAngle, struct Camer
     CamProps->UpDir.v[2] = ZRadians;
 
     // Up / Down rotation
-    CamProps->Target.v[1] += YAngle;
-
-    /*CamProps->Target.v[0] = CamProps->Position.v[0] + (cos(player.phi) * cos(player.theta));
-    CamProps->Target.v[1] = CamProps->Position.v[1] + (cos(player.phi) * sin(player.theta));
-    CamProps->Target.v[2] = CamProps->Position.v[2] + sin(player.phi);*/
+    CamProps->Target.v[1] += sin(YRadians) * USRadius;
+    DebugPrint("%f, %f\n", MINIMAL, USRadius, CamProps->Target.v[1]);
 }
 
 // Rotate the camera by x degrees around a 3D point
@@ -389,7 +365,6 @@ void MoveCameraToPoint(struct CameraProperties *CamProps, T3DVec3)
     T3DVec3 TargetDifference;
     
     t3d_vec3_diff(&TargetDifference, &CamProps->Position, &CamProps->Target);
-    FancyPrintVector3(TargetDifference);
 }
 
 // ----- Drawing functions -----

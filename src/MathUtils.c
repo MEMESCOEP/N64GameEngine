@@ -127,6 +127,17 @@ T3DVec3 GetUpVector(T3DVec3 ForwardVector, T3DVec3 RightVector)
     return ResultingVector;
 }
 
+// Get the distance between two vectors as a float
+// See https://math.stackexchange.com/a/42642 for the formula
+float VectorDistance(T3DVec3 FirstVector, T3DVec3 SecondVector)
+{
+    return sqrt(
+        pow(SecondVector.v[0] - FirstVector.v[0], 2) + 
+        pow(SecondVector.v[1] - FirstVector.v[1], 2) + 
+        pow(SecondVector.v[2] - FirstVector.v[2], 2)
+    );
+}
+
 // ----- Matrix math -----
 T3DMat4 CreateSRTMatrix(float Position[3], float Rotation[3], float Scale[3])
 {

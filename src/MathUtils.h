@@ -37,6 +37,7 @@ T3DVec3 Vec3UnitCirclePointFromAngle(float HorizontalDegrees, float VerticalDegr
 T3DVec3 GetForwardVector(T3DVec3 Position1, T3DVec3 Position2);
 T3DVec3 GetRightVector(T3DVec3 ForwardVector);
 T3DVec3 GetUpVector(T3DVec3 ForwardVector, T3DVec3 RightVector);
+float VectorDistance(T3DVec3 FirstVector, T3DVec3 SecondVector);
 
 // ----- Matrix math -----
 T3DMat4 CreateSRTMatrix(float Position[3], float Rotation[3], float Scale[3]);

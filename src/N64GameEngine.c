@@ -293,7 +293,6 @@ void RotateCameraRelative(float XAngle, float YAngle, float ZAngle, struct Camer
 
     // Up / Down rotation
     CamProps->Target.v[1] += sin(YRadians) * USRadius;
-    DebugPrint("%f, %f\n", MINIMAL, USRadius, CamProps->Target.v[1]);
 }
 
 // Rotate the camera by x degrees around a 3D point

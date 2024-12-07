@@ -19,9 +19,9 @@
 
 /* DEFINITIONS */
 #define SIGN(Number) (((Number) < 0.0f) ? -1.0f : ((Number) > 0.0f)) // The sign of a number (-1, 0, 1)
-#define ABS(Number) (((Number) < 0.0f) ? ((Number) * -1.0f) : ((Number))) // Returns the positive version of a number (EX: -1 -> 1)
-#define MAX(X, Y) ((X) > (Y) ? (X) : (Y)) // The larger of the two values
-#define MIN(X, Y) ((X) < (Y) ? (X) : (Y)) // The smaller of the two values
+#define ABS(Number) (((Number) < 0.0f) ? ((Number) * -1.0f) : ((Number))) // Returns the positive version of a number (EX: -1 turns into 1)
+#define MAX(X, Y) ((X) > (Y) ? (X) : (Y)) // The larger of two values
+#define MIN(X, Y) ((X) < (Y) ? (X) : (Y)) // The smaller of two values
 
 
 /* FUNCTIONS */
@@ -40,7 +40,7 @@ T3DVec3 GetUpVector(T3DVec3 ForwardVector, T3DVec3 RightVector);
 float VectorDistance(T3DVec3 FirstVector, T3DVec3 SecondVector);
 
 // ----- Matrix math -----
-T3DMat4 CreateSRTMatrix(float Position[3], float Rotation[3], float Scale[3]);
+T3DMat4 CreateSRTMatrix(T3DVec3 Position, T3DVec3 Rotation, T3DVec3 Scale);
 void UpdateTransformMatrix(struct ModelTransform* Transform);
 
 // ----- Range math -----

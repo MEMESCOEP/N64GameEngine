@@ -222,15 +222,9 @@ struct ModelTransform CreateNewModelTransform()
 
     // Set SRT transform data. This will prevent undefined behavior because we initialize to a known value
     // Note that rotation (euler angles) is in degrees
-    NewModelTransform.Position[0] = 0.0f;
-    NewModelTransform.Position[1] = 0.0f;
-    NewModelTransform.Position[2] = 0.0f;
-    NewModelTransform.Rotation[0] = 0.0f;
-    NewModelTransform.Rotation[1] = 0.0f;
-    NewModelTransform.Rotation[2] = 0.0f;
-    NewModelTransform.Scale[0] = 1.0f;
-    NewModelTransform.Scale[1] = 1.0f;
-    NewModelTransform.Scale[2] = 1.0f;
+    NewModelTransform.Position = (T3DVec3){{0.0f, 0.0f, 0.0f}};
+    NewModelTransform.Rotation = (T3DVec3){{0.0f, 0.0f, 0.0f}};
+    NewModelTransform.Scale = (T3DVec3){{1.0f, 1.0f, 1.0f}};
 
     t3d_mat4_identity(&NewModelTransform.ModelMatrix);
     return NewModelTransform;

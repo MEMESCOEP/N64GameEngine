@@ -99,35 +99,21 @@ int main()
 
     // Used to render the axis (XYZ) model
     CameraForwardTransform = CreateNewModelTransform();
-    CameraForwardTransform.Position[0] = CamProps.Target.v[0];
-    CameraForwardTransform.Position[1] = CamProps.Target.v[1];
-    CameraForwardTransform.Position[2] = CamProps.Target.v[2];
-    CameraForwardTransform.Scale[0] = 0.1f;
-    CameraForwardTransform.Scale[1] = 0.1f;
-    CameraForwardTransform.Scale[2] = 0.1f;
+    CameraForwardTransform.Position = CamProps.Target;
+    CameraForwardTransform.Scale = (T3DVec3){{0.1f, 0.1f, 0.1f}};
 
     // This scale may need to be tweaked to prevent "jitter" and texture distortion
     FloorModelTransform = CreateNewModelTransform();
-    FloorModelTransform.Position[0] = 0.0f;
-    FloorModelTransform.Position[1] = -100.0f;
-    FloorModelTransform.Position[2] = 0.0f;
-    FloorModelTransform.Scale[0] = 0.75f;
-    FloorModelTransform.Scale[1] = 1.0f;
-    FloorModelTransform.Scale[2] = 0.75f;
+    FloorModelTransform.Position = (T3DVec3){{0.0f, -100.0f, 0.0f}};
+    FloorModelTransform.Scale = (T3DVec3){{0.75f, 1.0f, 0.75f}};
 
     FenceModelTransform = CreateNewModelTransform();
-    FenceModelTransform.Position[0] =  0.0f;
-    FenceModelTransform.Position[1] = -75.0f;
-    FenceModelTransform.Position[2] = -125.0f;
-    FenceModelTransform.Scale[0] = 0.25f;
-    FenceModelTransform.Scale[1] = 0.25f;
-    FenceModelTransform.Scale[2] = 0.25f;
+    FenceModelTransform.Position = (T3DVec3){{0.0f, -75.0f, -125.0f}};
+    FenceModelTransform.Scale = (T3DVec3){{0.25f, 0.25f, 0.25f}};
 
     N64ModelTransform = CreateNewModelTransform();
-    N64ModelTransform.Position[1] = -40.0f;
-    N64ModelTransform.Scale[0] = 0.075f;
-    N64ModelTransform.Scale[1] = 0.075f;
-    N64ModelTransform.Scale[2] = 0.075f;
+    N64ModelTransform.Position.v[1] = -40.0f;
+    N64ModelTransform.Scale = (T3DVec3){{0.075f, 0.075f, 0.075f}};
 
     t3d_vec3_norm(&SunDirection);
 
@@ -136,12 +122,8 @@ int main()
     {
         struct ModelTransform NewTransform = CreateNewModelTransform();
 
-        NewTransform.Position[0] = BushPositions[BMIndex][0];
-        NewTransform.Position[1] = -100.0f;
-        NewTransform.Position[2] = BushPositions[BMIndex][1];
-        NewTransform.Scale[0] = 0.5f;
-        NewTransform.Scale[1] = 0.5f;
-        NewTransform.Scale[2] = 0.5f;
+        NewTransform.Position = (T3DVec3){{BushPositions[BMIndex][0], -100.0f, BushPositions[BMIndex][1]}};
+        NewTransform.Scale = (T3DVec3){{0.5f, 0.5f, 0.5f}};
 
         BushModelTransforms[BMIndex] = NewTransform;
     }
@@ -158,15 +140,13 @@ int main()
         // models if the matrix changes more than once per frame.
         ModelAngle += 1.5f * DeltaTime;
         CamForwardDirection = CamProps.ForwardVector;
-        N64ModelTransform.Rotation[0] = ModelAngle * -RotationSpeed;
-        N64ModelTransform.Rotation[1] = ModelAngle * -RotationSpeed;
+        N64ModelTransform.Rotation.v[0] = ModelAngle * -RotationSpeed;
+        N64ModelTransform.Rotation.v[1] = ModelAngle * -RotationSpeed;
 
         ScaleFloat3(CamForwardDirection.v, 100.0f);
-        CameraForwardTransform.Position[0] = CamProps.Target.v[0] + CamForwardDirection.v[0];
-        CameraForwardTransform.Position[1] = CamProps.Target.v[1] + CamForwardDirection.v[1];
-        CameraForwardTransform.Position[2] = CamProps.Target.v[2] + CamForwardDirection.v[2];
+        t3d_vec3_add(&CameraForwardTransform.Position, &CamProps.Target, &CamForwardDirection);
 
-        // Read controller input from port 1 into a buffer
+        // Read input from controller port 1 into a buffer
         GetControllerInput(&Input, JOYPAD_PORT_1);
 
         if (CameraMode == 0)
@@ -219,13 +199,12 @@ int main()
             }
         }
 
-        // Switch between debug modes
+        // Toggle the 3D axis model if the B button is held. Otherwise, change the debug mode
         //  0: No debug info is displayed
         //  1: Minimal debug info is displayed (MEM, Uptime, FPS)
         //  2: All debug info is displayed (Info from 1, Camera properties, stick input)
         if (Input.PressedButtons.z)
         {
-            // Toggle the 3D axis model if the B button is held. Otherwise, change the debug mode
             if (Input.HeldButtons.b)
             {
                 DrawAxisModel = !DrawAxisModel;
@@ -284,9 +263,7 @@ int main()
         // Render models
         RenderModel(FloorModel, &FloorModelTransform, true);
         RenderModel(N64Model, &N64ModelTransform, true);
-
-        // Draw 4 bushes; one in each corner
-        // Also draw 4 fences
+        
         for (int ModelIndex = 0; ModelIndex < 4; ModelIndex++)
         {
             //RenderModel(FenceModel, &FenceModelTransforms[ModelIndex], true);
@@ -294,7 +271,7 @@ int main()
         }        
 
         // Draw the Axis ("XYZ") model if it's enabled. We clear the depth buffer before we draw this so it will appear in top of everything.
-        // It's important that we only clear the Z buffer and draw this model AFTER everything else has been drawn, because otherwise
+        // It's important that we only clear the depth buffer and draw this model AFTER everything else has been drawn, because otherwise
         // everything would be drawn with no depth. I've chosen not to disable Z sorting because that causes an issue when rendering the Axis
         // model where the X axis arrow would be visible through the Z axis arrow.
         if (DrawAxisModel == true)
@@ -307,7 +284,6 @@ int main()
         // else unless you have a specific reason not to
         Start2DMode();
 
-        // Draw debug statistics
         if (DebugMode > 0)
         {
             rdpq_text_printf(NULL, 1, 5, 12, "MEM USED: %.2f KB", (HeapStats.used / 1024.0f) * 1.024f);

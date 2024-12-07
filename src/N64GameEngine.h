@@ -63,9 +63,9 @@ struct ModelTransform
     rspq_block_t* RenderBlock;
     T3DMat4FP* ModelMatrixFP;
     T3DMat4 ModelMatrix;
-    float Position[3];
-    float Rotation[3];
-    float Scale[3];
+    T3DVec3 Position;
+    T3DVec3 Rotation;
+    T3DVec3 Scale;
 };
 
 extern struct CameraProperties DefaultCameraProperties;

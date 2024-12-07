@@ -138,15 +138,15 @@ float VectorDistance(T3DVec3 FirstVector, T3DVec3 SecondVector)
 }
 
 // ----- Matrix math -----
-T3DMat4 CreateSRTMatrix(float Position[3], float Rotation[3], float Scale[3])
+T3DMat4 CreateSRTMatrix(T3DVec3 Position, T3DVec3 Rotation, T3DVec3 Scale)
 {
     T3DMat4 NewMatrix;
 
     // Create a matrix so the model can be rendered
     t3d_mat4_from_srt_euler(&NewMatrix,
-        Scale,
-        Rotation,
-        Position
+        Scale.v,
+        Rotation.v,
+        Position.v
     );
 
     return NewMatrix;
@@ -192,4 +192,10 @@ void ScaleFloat3(float FloatToScale[3], float ScaleValue)
     FloatToScale[0] *= ScaleValue;
     FloatToScale[1] *= ScaleValue;
     FloatToScale[2] *= ScaleValue;
+}
+
+// Add a vector3 to a float[3]
+void AddVector3ToFloat3(float Float3[3], T3DVec3 VectorToAdd)
+{
+    //Float3[0] = 
 }

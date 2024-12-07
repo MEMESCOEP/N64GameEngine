@@ -22,25 +22,25 @@ struct ControllerState Input;
 struct ModelTransform CameraForwardTransform;
 struct ModelTransform FloorModelTransform;
 struct ModelTransform FenceModelTransform;
-struct ModelTransform GearModelTransform1;
+struct ModelTransform N64ModelTransform;
 struct ModelTransform FenceModelTransforms[4];
 struct ModelTransform BushModelTransforms[4];
 struct ModelTransform HeadModelTransforms[4];
 T3DViewport Viewport;
-rdpq_font_t *NewFont;
-T3DModel *HeadModels[4];
-T3DModel *FloorModel;
-T3DModel *FenceModel;
-T3DModel *AxisModel;
-T3DModel *BushModel;
-T3DModel *GearModel;
+rdpq_font_t* NewFont;
+T3DModel* HeadModels[4];
+T3DModel* FloorModel;
+T3DModel* FenceModel;
+T3DModel* AxisModel;
+T3DModel* BushModel;
+T3DModel* N64Model;
 T3DVec3 CamForwardDirection;
 T3DVec3 SunDirection = {{-1.0f, 1.0f, 1.0f}};
 color_t SkyColor = (color_t){0x94, 0xC4, 0xF2, 0xFF};
 uint8_t GlobalLightColor[4] = {0x50, 0x50, 0x64, 0xFF};
 uint8_t SunColor[4] = {0xFB, 0xFF, 0xCD, 0xFF};
-char *HeadModelPaths[4] = {"rom:/Pikachu.t3dm", "rom:/Mario.t3dm", "rom:/Link.t3dm", "rom:/FoxMcCloud.t3dm"};
-char *CameraModeStr = "Orbit";
+char* HeadModelPaths[4] = {"rom:/Pikachu.t3dm", "rom:/Mario.t3dm", "rom:/Link.t3dm", "rom:/FoxMcCloud.t3dm"};
+char* CameraModeStr = "Orbit";
 float FencePositions[4][2] = {{175.0f, 175.0f}, {175.0f, -175.0f}, {-175.0f, -175.0f}, {-175.0f, 175.0f}};
 float BushPositions[4][2] = {{175.0f, 175.0f}, {175.0f, -175.0f}, {-175.0f, -175.0f}, {-175.0f, 175.0f}};
 float HeadPositions[4][2] = {{175.0f, 175.0f}, {175.0f, -175.0f}, {-175.0f, -175.0f}, {-175.0f, 175.0f}};
@@ -89,7 +89,7 @@ int main()
     FenceModel = t3d_model_load("rom:/Fence.t3dm");
     AxisModel = t3d_model_load("rom:/XYZ.t3dm");
     BushModel = t3d_model_load("rom:/StretchyBush.t3dm");
-    GearModel = t3d_model_load("rom:/Gear.t3dm");
+    N64Model = t3d_model_load("rom:/N64.t3dm");
 
     // Commented out because I haven't yet decided what models to use
     /*for (int ModelIndex = 0; ModelIndex < 4; ModelIndex++)
@@ -123,11 +123,11 @@ int main()
     FenceModelTransform.Scale[1] = 0.25f;
     FenceModelTransform.Scale[2] = 0.25f;
 
-    GearModelTransform1 = CreateNewModelTransform();
-    GearModelTransform1.Position[1] = -40.0f;
-    GearModelTransform1.Scale[0] = 0.2f;
-    GearModelTransform1.Scale[1] = 0.2f;
-    GearModelTransform1.Scale[2] = 0.2f;
+    N64ModelTransform = CreateNewModelTransform();
+    N64ModelTransform.Position[1] = -40.0f;
+    N64ModelTransform.Scale[0] = 0.075f;
+    N64ModelTransform.Scale[1] = 0.075f;
+    N64ModelTransform.Scale[2] = 0.075f;
 
     t3d_vec3_norm(&SunDirection);
 
@@ -158,9 +158,8 @@ int main()
         // models if the matrix changes more than once per frame.
         ModelAngle += 1.5f * DeltaTime;
         CamForwardDirection = CamProps.ForwardVector;
-        GearModelTransform1.Rotation[0] = ModelAngle * RotationSpeed;
-        GearModelTransform1.Rotation[1] = ModelAngle * RotationSpeed;
-        GearModelTransform1.Rotation[2] = ModelAngle * RotationSpeed * 4.0f;
+        N64ModelTransform.Rotation[0] = ModelAngle * -RotationSpeed;
+        N64ModelTransform.Rotation[1] = ModelAngle * -RotationSpeed;
 
         ScaleFloat3(CamForwardDirection.v, 100.0f);
         CameraForwardTransform.Position[0] = CamProps.Target.v[0] + CamForwardDirection.v[0];
@@ -284,6 +283,7 @@ int main()
 
         // Render models
         RenderModel(FloorModel, &FloorModelTransform, true);
+        RenderModel(N64Model, &N64ModelTransform, true);
 
         // Draw 4 bushes; one in each corner
         // Also draw 4 fences
@@ -291,11 +291,7 @@ int main()
         {
             //RenderModel(FenceModel, &FenceModelTransforms[ModelIndex], true);
             RenderModel(BushModel, &BushModelTransforms[ModelIndex], true);
-        }
-
-        // The colored band on the gear model is using the 'prim-color' property
-        rdpq_set_prim_color(GetRainbowColor(ModelAngle * 0.42f));
-        RenderModel(GearModel, &GearModelTransform1, true);
+        }        
 
         // Draw the Axis ("XYZ") model if it's enabled. We clear the depth buffer before we draw this so it will appear in top of everything.
         // It's important that we only clear the Z buffer and draw this model AFTER everything else has been drawn, because otherwise

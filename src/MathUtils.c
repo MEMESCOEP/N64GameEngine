@@ -17,7 +17,7 @@
 /* FUNCTIONS */
 // ----- Vector math -----
 // Rotate a vector3 by x degrees around the X axis
-void RotateVectorAxisX(T3DVec3 *VectorToRotate, float Degrees)
+void RotateVectorAxisX(T3DVec3* VectorToRotate, float Degrees)
 {
     float Radians = T3D_DEG_TO_RAD(Degrees);
 
@@ -26,7 +26,7 @@ void RotateVectorAxisX(T3DVec3 *VectorToRotate, float Degrees)
 }
 
 // Rotate a vector3 by x degrees around the Y axis
-void RotateVectorAxisY(T3DVec3 *VectorToRotate, float Degrees)
+void RotateVectorAxisY(T3DVec3* VectorToRotate, float Degrees)
 {
     float Radians = T3D_DEG_TO_RAD(Degrees);
 
@@ -35,7 +35,7 @@ void RotateVectorAxisY(T3DVec3 *VectorToRotate, float Degrees)
 }
 
 // Rotate a vector3 by x degrees around the Z axis
-void RotateVectorAxisZ(T3DVec3 *VectorToRotate, float Degrees)
+void RotateVectorAxisZ(T3DVec3* VectorToRotate, float Degrees)
 {
     float Radians = T3D_DEG_TO_RAD(Degrees);
 
@@ -44,7 +44,7 @@ void RotateVectorAxisZ(T3DVec3 *VectorToRotate, float Degrees)
 }
 
 // Rotate a vector3 by x degrees
-void RotateVector3ByDegrees(T3DVec3 *Vector3ToRotate, T3DVec3 RotationDegrees)
+void RotateVector3ByDegrees(T3DVec3* Vector3ToRotate, T3DVec3 RotationDegrees)
 {
     RotateVectorAxisX(Vector3ToRotate, RotationDegrees.v[0]);
     RotateVectorAxisY(Vector3ToRotate, RotationDegrees.v[1]);
@@ -52,7 +52,7 @@ void RotateVector3ByDegrees(T3DVec3 *Vector3ToRotate, T3DVec3 RotationDegrees)
 }
 
 // Multiply the X, Y, and Z axes by a value
-void MultiplyAxesByFloat(T3DVec3 *VectorToUpdate, T3DVec3 AxesToUpdate, float MultiplyValue)
+void MultiplyAxesByFloat(T3DVec3* VectorToUpdate, T3DVec3 AxesToUpdate, float MultiplyValue)
 {
     VectorToUpdate->v[0] = VectorToUpdate->v[0] * (MultiplyValue * AxesToUpdate.v[0] != 0 ? MultiplyValue : 1.0f);
     VectorToUpdate->v[0] = VectorToUpdate->v[1] * (MultiplyValue * AxesToUpdate.v[1] != 0 ? MultiplyValue : 1.0f);
@@ -60,7 +60,7 @@ void MultiplyAxesByFloat(T3DVec3 *VectorToUpdate, T3DVec3 AxesToUpdate, float Mu
 }
 
 // Add a value to the X, Y, and Z axes
-void AddFloatToAxes(T3DVec3 *VectorToUpdate, T3DVec3 AxesToUpdate, float ValueToAdd)
+void AddFloatToAxes(T3DVec3* VectorToUpdate, T3DVec3 AxesToUpdate, float ValueToAdd)
 {
     VectorToUpdate->v[0] = VectorToUpdate->v[0] + (ValueToAdd * AxesToUpdate.v[0]);
     VectorToUpdate->v[1] = VectorToUpdate->v[1] + (ValueToAdd * AxesToUpdate.v[1]);
@@ -69,7 +69,7 @@ void AddFloatToAxes(T3DVec3 *VectorToUpdate, T3DVec3 AxesToUpdate, float ValueTo
 
 // Set all zeroes in a vector to one
 // This is useful for cases where you need to multiply by a vector, and your axes to update are zero.
-void OneifyVectorZeroes(T3DVec3 *VectorToUpdate)
+void OneifyVectorZeroes(T3DVec3* VectorToUpdate)
 {
     for (int AxisIndex = 0; AxisIndex < 3; AxisIndex++)
     {
@@ -152,7 +152,7 @@ T3DMat4 CreateSRTMatrix(float Position[3], float Rotation[3], float Scale[3])
     return NewMatrix;
 }
 
-void UpdateTransformMatrix(struct ModelTransform *Transform)
+void UpdateTransformMatrix(struct ModelTransform* Transform)
 {
     Transform->ModelMatrix = CreateSRTMatrix(Transform->Position, Transform->Rotation, Transform->Scale);
     t3d_mat4_to_fixed(Transform->ModelMatrixFP, &Transform->ModelMatrix);

@@ -32,9 +32,9 @@ struct CameraProperties DefaultCameraProperties = {
 
 enum EngineDebugModes CurrentDebugMode = MINIMAL;
 heap_stats_t HeapStats;
-rspq_block_t *DrawCommands = NULL;
-surface_t *DisplaySurface = NULL;
-surface_t *DepthBuffer;
+rspq_block_t* DrawCommands = NULL;
+surface_t* DisplaySurface = NULL;
+surface_t* DepthBuffer;
 T3DVec3 WorldUpVector = {{0.0f, 1.0f, 0.0f}};
 long long LastHeapStatsUpdate = 0;
 long long LastFPSUpdate = 0;
@@ -74,7 +74,7 @@ enum EngineDebugModes GetDebugMode()
 //  %c -> Character
 //  %v -> Vector3 (T3DVec3)
 //  %m -> 4x4 Matrix (T3DMat4)
-void DebugPrint(char *Message, enum EngineDebugModes DebugMode, ...)
+void DebugPrint(char* Message, enum EngineDebugModes DebugMode, ...)
 {
     if (CurrentDebugMode == NONE || (DebugMode == ALL && CurrentDebugMode == MINIMAL))
         return;
@@ -199,7 +199,7 @@ void UpdateEngine(struct CameraProperties* CamProps)
 
 // ----- Registration functions -----
 // Registers a font to the specified font ID
-rdpq_font_t *RegisterFont(char *FontPath, int FontID)
+rdpq_font_t* RegisterFont(char* FontPath, int FontID)
 {
     rdpq_font_t *NewFont = rdpq_font_load(FontPath);
     rdpq_font_style(NewFont, 0, &(rdpq_fontstyle_t){
@@ -237,7 +237,7 @@ struct ModelTransform CreateNewModelTransform()
 }
 
 // Creates a new render block and assigns it to a model transform
-void AssignNewRenderBlock(struct ModelTransform *Transform, T3DModel *ModelToRender)
+void AssignNewRenderBlock(struct ModelTransform* Transform, T3DModel* ModelToRender)
 {
     if (Transform->RenderBlock != NULL)
     {
@@ -275,7 +275,7 @@ void UpdateCameraDirections(struct CameraProperties* CamProps)
 }
 
 // Rotate the camera to x degrees (not relative to its current angles) [BROKEN]
-void RotateCameraToAngle(float XAngle, float YAngle, struct CameraProperties *CamProps)
+void RotateCameraToAngle(float XAngle, float YAngle, struct CameraProperties* CamProps)
 {
     T3DVec3 UnitSpherePoint = Vec3UnitCirclePointFromAngle(XAngle, YAngle, CamProps->Position);
     
@@ -285,7 +285,7 @@ void RotateCameraToAngle(float XAngle, float YAngle, struct CameraProperties *Ca
 }
 
 // Rotate the camera by x degrees (relative to its current angles)
-void RotateCameraRelative(float XAngle, float YAngle, float ZAngle, struct CameraProperties *CamProps)
+void RotateCameraRelative(float XAngle, float YAngle, float ZAngle, struct CameraProperties* CamProps)
 {
     float USRadius = VectorDistance(CamProps->Position, CamProps->Target);
     float XRadians = T3D_DEG_TO_RAD(XAngle);
@@ -308,7 +308,7 @@ void RotateCameraRelative(float XAngle, float YAngle, float ZAngle, struct Camer
 }
 
 // Rotate the camera by x degrees around a 3D point
-void RotateCameraAroundPoint(float RotationAngle, struct CameraProperties *CamProps, T3DVec3 PointToRotateAround)
+void RotateCameraAroundPoint(float RotationAngle, struct CameraProperties* CamProps, T3DVec3 PointToRotateAround)
 {
     float Radians = T3D_DEG_TO_RAD(RotationAngle);
     float DX = CamProps->Position.v[0] * cos(Radians) - CamProps->Position.v[2] * sin(Radians);
@@ -320,7 +320,7 @@ void RotateCameraAroundPoint(float RotationAngle, struct CameraProperties *CamPr
 }
 
 // Moves the camera up and down along its local or world up vector
-void MoveCameraVertical(struct CameraProperties *CamProps, float DistanceStep, bool UseWorldUp)
+void MoveCameraVertical(struct CameraProperties* CamProps, float DistanceStep, bool UseWorldUp)
 {
     T3DVec3 CamUpVector = WorldUpVector;
  
@@ -335,7 +335,7 @@ void MoveCameraVertical(struct CameraProperties *CamProps, float DistanceStep, b
 }
 
 // Moves the camera along its local or world forward vector
-void MoveCameraLateral(struct CameraProperties *CamProps, float DistanceStep, bool UseWorldForward)
+void MoveCameraLateral(struct CameraProperties* CamProps, float DistanceStep, bool UseWorldForward)
 {
     if (UseWorldForward == true)
     {
@@ -350,7 +350,7 @@ void MoveCameraLateral(struct CameraProperties *CamProps, float DistanceStep, bo
 }
 
 // Moves the camera side to side along its local or world right vector
-void MoveCameraStrafe(struct CameraProperties *CamProps, float DistanceStep, bool UseWorldRight)
+void MoveCameraStrafe(struct CameraProperties* CamProps, float DistanceStep, bool UseWorldRight)
 {
     if (UseWorldRight == true)
     {
@@ -365,7 +365,7 @@ void MoveCameraStrafe(struct CameraProperties *CamProps, float DistanceStep, boo
 }
 
 // Moves the camera to a specific point in 3D space (X, Y, Z) while keeping its rotation the same
-void MoveCameraToPoint(struct CameraProperties *CamProps, T3DVec3)
+void MoveCameraToPoint(struct CameraProperties* CamProps, T3DVec3)
 {
     T3DVec3 TargetDifference;
     
@@ -390,7 +390,7 @@ void DrawString(char* Text, int FontID, int XPos, int YPos)
 }
 
 // [USES TRANSFORM] Render a 3D model at the specified SRT
-void RenderModel(T3DModel *ModelToRender, struct ModelTransform *Transform, bool UpdateMatrix)
+void RenderModel(T3DModel* ModelToRender, struct ModelTransform* Transform, bool UpdateMatrix)
 {
     if (UpdateMatrix == true)
     {
@@ -410,7 +410,7 @@ void RenderModel(T3DModel *ModelToRender, struct ModelTransform *Transform, bool
 }
 
 // [USES TRANSFORM] Render a 3D model without pushing / popping a matrix. The push / pop action should be done externally with the "t3d_matrix_push_pos" and "t3d_matrix_pop" functions
-void RenderMultiModel(T3DModel *ModelToRender, struct ModelTransform *Transform, bool UpdateMatrix)
+void RenderMultiModel(T3DModel* ModelToRender, struct ModelTransform* Transform, bool UpdateMatrix)
 {
     if (UpdateMatrix == true)
     {
@@ -435,7 +435,7 @@ void ClearScreen(color_t ClearColor)
 }
 
 // Set the light count and color
-void UpdateLightProperties(int LightCount, uint8_t *GlobalLightColor, uint8_t *SunColor, T3DVec3 *SunDirection)
+void UpdateLightProperties(int LightCount, uint8_t* GlobalLightColor, uint8_t* SunColor, T3DVec3* SunDirection)
 {
     t3d_light_set_ambient(GlobalLightColor);
     t3d_light_set_directional(0, SunColor, SunDirection);
@@ -443,7 +443,7 @@ void UpdateLightProperties(int LightCount, uint8_t *GlobalLightColor, uint8_t *S
 }
 
 // Update the projection and camera
-void UpdateViewport(T3DViewport *Viewport, struct CameraProperties CamProps)
+void UpdateViewport(T3DViewport* Viewport, struct CameraProperties CamProps)
 {
     t3d_viewport_set_projection(Viewport, T3D_DEG_TO_RAD(CamProps.FOV), CameraClipping[0], CameraClipping[1]);
     t3d_viewport_look_at(Viewport, &CamProps.Position, &CamProps.Target, &CamProps.UpDir);
@@ -470,7 +470,7 @@ void EndFrame(struct CameraProperties* CamProps)
 }
 
 // Configure RDPQ for 3D
-void Start3DMode(T3DViewport *Viewport)
+void Start3DMode(T3DViewport* Viewport)
 {
     t3d_frame_start();
     t3d_viewport_attach(Viewport);
@@ -486,7 +486,7 @@ void Start2DMode()
 // ----- Input functions -----
 // Get input from a controller at the specified port.
 // There are usually only 4 ports available for reading, and can be addressed using any integer between (and including) 0 and 3
-void GetControllerInput(struct ControllerState *StructToUpdate, int ControllerPort)
+void GetControllerInput(struct ControllerState* StructToUpdate, int ControllerPort)
 {
     // Don't do anything if the controller isn't connected
     if (joypad_is_connected(ControllerPort) == false)

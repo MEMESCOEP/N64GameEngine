@@ -26,13 +26,13 @@
 
 /* FUNCTIONS */
 // ----- Vector math -----
-void RotateVectorAxisX(T3DVec3 *VectorToRotate, float Degrees);
-void RotateVectorAxisY(T3DVec3 *VectorToRotate, float Degrees);
-void RotateVectorAxisZ(T3DVec3 *VectorToRotate, float Degrees);
-void RotateVector3ByDegrees(T3DVec3 *Vector3ToRotate, T3DVec3 RotationDegrees);
-void MultiplyAxesByFloat(T3DVec3 *VectorToUpdate, T3DVec3 AxesToUpdate, float MultiplyValue);
-void AddFloatToAxes(T3DVec3 *VectorToUpdate, T3DVec3 AxesToUpdate, float ValueToAdd);
-void OneifyVectorZeroes(T3DVec3 *VectorToUpdate);
+void RotateVectorAxisX(T3DVec3* VectorToRotate, float Degrees);
+void RotateVectorAxisY(T3DVec3* VectorToRotate, float Degrees);
+void RotateVectorAxisZ(T3DVec3* VectorToRotate, float Degrees);
+void RotateVector3ByDegrees(T3DVec3* Vector3ToRotate, T3DVec3 RotationDegrees);
+void MultiplyAxesByFloat(T3DVec3* VectorToUpdate, T3DVec3 AxesToUpdate, float MultiplyValue);
+void AddFloatToAxes(T3DVec3* VectorToUpdate, T3DVec3 AxesToUpdate, float ValueToAdd);
+void OneifyVectorZeroes(T3DVec3* VectorToUpdate);
 T3DVec3 Vec3UnitCirclePointFromAngle(float HorizontalDegrees, float VerticalDegrees, T3DVec3 CenterPoint);
 T3DVec3 GetForwardVector(T3DVec3 Position1, T3DVec3 Position2);
 T3DVec3 GetRightVector(T3DVec3 ForwardVector);
@@ -41,8 +41,7 @@ float VectorDistance(T3DVec3 FirstVector, T3DVec3 SecondVector);
 
 // ----- Matrix math -----
 T3DMat4 CreateSRTMatrix(float Position[3], float Rotation[3], float Scale[3]);
-void CreateFixedPointMatrix(T3DMat4FP *FPMatrixToUpdate, T3DMat4 MatrixToCreateFrom);
-void UpdateTransformMatrix(struct ModelTransform *Transform);
+void UpdateTransformMatrix(struct ModelTransform* Transform);
 
 // ----- Range math -----
 float ZeroBelowMinimum(float Number, float Minimum);

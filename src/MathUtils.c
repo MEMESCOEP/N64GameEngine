@@ -77,7 +77,6 @@ void OneifyVectorZeroes(T3DVec3 *VectorToUpdate)
     }
 }
 
-
 // Get a point on a unit circle using a position and an angle
 T3DVec3 Vec3UnitCirclePointFromAngle(float HorizontalDegrees, float VerticalDegrees, T3DVec3 CenterPoint)
 {
@@ -184,4 +183,13 @@ float UnsignedKeepInRange(float Number, float Minimum, float Maximum)
     }
 
     return MAX(MIN(ABSNumber, Maximum), Minimum) * NumSign;
+}
+
+// ----- Array math -----
+// Scale a float[3] by a float
+void ScaleFloat3(float FloatToScale[3], float ScaleValue)
+{
+    FloatToScale[0] *= ScaleValue;
+    FloatToScale[1] *= ScaleValue;
+    FloatToScale[2] *= ScaleValue;
 }

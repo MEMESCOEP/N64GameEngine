@@ -23,6 +23,9 @@
 struct CameraProperties DefaultCameraProperties = {
     (T3DVec3){{0.0f, 0.0f, 0.0f}},
     (T3DVec3){{0.0f, 0.0f, 0.0f}},
+    (T3DVec3){{0.0f, 0.0f, 0.0f}},
+    (T3DVec3){{0.0f, 0.0f, 0.0f}},
+    (T3DVec3){{0.0f, 0.0f, 0.0f}},
     (T3DVec3){{0.0f, 1.0f, 0.0f}},
     70.0f
 };
@@ -169,7 +172,7 @@ void InitSystem(resolution_t Resolution, bitdepth_t BitDepth, uint32_t BufferNum
 }
 
 // Update all engine data when required
-void UpdateEngine()
+void UpdateEngine(struct CameraProperties* CamProps)
 {
     // Update FPS reading every x millisecond(s)
     // This has been commented out because we don't need to do it when calling display_get_fps, which has a slower update time but is slightly more accurate
@@ -191,6 +194,7 @@ void UpdateEngine()
     FrameCount++;
     DeltaTime = display_get_delta_time();
     FPS = display_get_fps();
+    UpdateCameraDirections(CamProps);
 }
 
 // ----- Registration functions -----
@@ -262,6 +266,14 @@ void SetTargetFPS(int Target)
 }
 
 // ----- Camera Functions -----
+// Update the camera's forward, right, and up vectors
+void UpdateCameraDirections(struct CameraProperties* CamProps)
+{
+    CamProps->ForwardVector = GetForwardVector(CamProps->Position, CamProps->Target);
+    CamProps->RightVector = GetRightVector(CamProps->ForwardVector);
+    CamProps->UpVector = GetUpVector(CamProps->ForwardVector, GetRightVector(CamProps->ForwardVector));
+}
+
 // Rotate the camera to x degrees (not relative to its current angles) [BROKEN]
 void RotateCameraToAngle(float XAngle, float YAngle, struct CameraProperties *CamProps)
 {
@@ -314,17 +326,16 @@ void MoveCameraVertical(struct CameraProperties *CamProps, float DistanceStep, b
  
     if (UseWorldUp == false)
     {
-        T3DVec3 CamForwardVector = GetForwardVector(CamProps->Position, CamProps->Target);
-        CamUpVector = GetUpVector(CamForwardVector, GetRightVector(CamForwardVector));
+        CamUpVector = CamProps->UpVector;
     }
 
-    t3d_vec3_scale(&CamUpVector, &CamUpVector, DistanceStep);
+    ScaleFloat3(CamUpVector.v, DistanceStep);
     t3d_vec3_add(&CamProps->Position, &CamProps->Position, &CamUpVector);
     t3d_vec3_add(&CamProps->Target, &CamProps->Target, &CamUpVector);
 }
 
 // Moves the camera along its local or world forward vector
-void MoveCameraLateral(T3DVec3 *CameraPosition, T3DVec3 *CameraTarget, float DistanceStep, bool UseWorldForward)
+void MoveCameraLateral(struct CameraProperties *CamProps, float DistanceStep, bool UseWorldForward)
 {
     if (UseWorldForward == true)
     {
@@ -332,11 +343,9 @@ void MoveCameraLateral(T3DVec3 *CameraPosition, T3DVec3 *CameraTarget, float Dis
     }
     else
     {
-        T3DVec3 CamForwardVector = GetForwardVector(*CameraPosition, *CameraTarget);
-
-        t3d_vec3_scale(&CamForwardVector, &CamForwardVector, DistanceStep);
-        t3d_vec3_add(CameraPosition, CameraPosition, &CamForwardVector);
-        t3d_vec3_add(CameraTarget, CameraTarget, &CamForwardVector);
+        ScaleFloat3(CamProps->ForwardVector.v, DistanceStep);
+        t3d_vec3_add(&CamProps->Position, &CamProps->Position, &CamProps->ForwardVector);
+        t3d_vec3_add(&CamProps->Target, &CamProps->Target, &CamProps->ForwardVector);
     }
 }
 
@@ -349,12 +358,9 @@ void MoveCameraStrafe(struct CameraProperties *CamProps, float DistanceStep, boo
     }
     else
     {
-        T3DVec3 CamForwardVector = GetForwardVector(CamProps->Position, CamProps->Target);
-        T3DVec3 CamRightVector = GetRightVector(CamForwardVector);
-
-        t3d_vec3_scale(&CamRightVector, &CamRightVector, DistanceStep);
-        t3d_vec3_add(&CamProps->Position, &CamProps->Position, &CamRightVector);
-        t3d_vec3_add(&CamProps->Target, &CamProps->Target, &CamRightVector);
+        ScaleFloat3(CamProps->RightVector.v, DistanceStep);
+        t3d_vec3_add(&CamProps->Position, &CamProps->Position, &CamProps->RightVector);
+        t3d_vec3_add(&CamProps->Target, &CamProps->Target, &CamProps->RightVector);
     }
 }
 
@@ -457,10 +463,10 @@ void StartFrame()
 }
 
 // Finish a frame
-void EndFrame()
+void EndFrame(struct CameraProperties* CamProps)
 {
     rdpq_detach_show();
-    UpdateEngine();
+    UpdateEngine(CamProps);
 }
 
 // Configure RDPQ for 3D

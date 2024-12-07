@@ -38,6 +38,9 @@ struct CameraProperties
 {
     T3DVec3 Position;
     T3DVec3 Target;
+    T3DVec3 ForwardVector;
+    T3DVec3 RightVector;
+    T3DVec3 UpVector;
     T3DVec3 UpDir;
     float FOV;
 };
@@ -85,7 +88,7 @@ void DebugPrint(char *Message, enum EngineDebugModes DebugMode, ...);
 
 // ----- Engine functions -----
 void InitSystem(resolution_t Resolution, bitdepth_t BitDepth, uint32_t BufferNum, filter_options_t Filters, bool Init3D);
-void UpdateEngine();
+void UpdateEngine(struct CameraProperties* CamProps);
 
 // ----- Registration functions -----
 rdpq_font_t *RegisterFont(char *FontPath, int FontID);
@@ -102,11 +105,12 @@ float MSToTicks(int MS);
 float FPSToMS(int FPSToConvert);
 
 // ----- Camera Functions -----
+void UpdateCameraDirections(struct CameraProperties* CamProps);
 void RotateCameraToAngle(float XAngle, float YAngle, struct CameraProperties *CamProps);
 void RotateCameraRelative(float XAngle, float YAngle, float ZAngle, struct CameraProperties *CamProps);
 void RotateCameraAroundPoint(float RotationAngle, struct CameraProperties *CamProps, T3DVec3 PointToRotateAround);
 void MoveCameraVertical(struct CameraProperties *CamProps, float DistanceStep, bool UseWorldUp);
-void MoveCameraLateral(T3DVec3 *CameraPosition, T3DVec3 *CameraTarget, float DistanceStep, bool UseWorldForward);
+void MoveCameraLateral(struct CameraProperties *CamProps, float DistanceStep, bool UseWorldForward);
 void MoveCameraStrafe(struct CameraProperties *CamProps, float DistanceStep, bool UseWorldRight);
 void MoveCameraToPoint(struct CameraProperties *CamProps, T3DVec3);
 
@@ -118,11 +122,10 @@ void ClearScreen(color_t ClearColor);
 void UpdateLightProperties(int LightCount, uint8_t *GlobalLightColor, uint8_t *SunColor, T3DVec3 *SunDirection);
 void UpdateViewport(T3DViewport *Viewport, struct CameraProperties CamProps);
 void StartFrame();
-void EndFrame();
+void EndFrame(struct CameraProperties* CamProps);
 void Start3DMode(T3DViewport *Viewport);
 void Start2DMode();
 
 // ----- Input functions -----
 void GetControllerInput(struct ControllerState *StructToUpdate, int ControllerPort);
-
 #endif

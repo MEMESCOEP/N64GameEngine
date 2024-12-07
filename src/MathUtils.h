@@ -48,4 +48,7 @@ void UpdateTransformMatrix(struct ModelTransform *Transform);
 float ZeroBelowMinimum(float Number, float Minimum);
 float ZeroAboveMaximum(float Number, float Maximum);
 float UnsignedKeepInRange(float Number, float Minimum, float Maximum);
+
+// ----- Array math -----
+void ScaleFloat3(float FloatToScale[3], float ScaleValue);
 #endif

@@ -34,6 +34,7 @@ T3DModel *FenceModel;
 T3DModel *AxisModel;
 T3DModel *BushModel;
 T3DModel *GearModel;
+T3DVec3 CamForwardDirection;
 T3DVec3 SunDirection = {{-1.0f, 1.0f, 1.0f}};
 color_t SkyColor = (color_t){0x94, 0xC4, 0xF2, 0xFF};
 uint8_t GlobalLightColor[4] = {0x50, 0x50, 0x64, 0xFF};
@@ -156,12 +157,15 @@ int main()
         // avoid potential graphical issues. Note that T3D draws asynchronously, so you can't use one matrix to render multiple
         // models if the matrix changes more than once per frame.
         ModelAngle += 1.5f * DeltaTime;
+        CamForwardDirection = CamProps.ForwardVector;
         GearModelTransform1.Rotation[0] = ModelAngle * RotationSpeed;
         GearModelTransform1.Rotation[1] = ModelAngle * RotationSpeed;
         GearModelTransform1.Rotation[2] = ModelAngle * RotationSpeed * 4.0f;
-        CameraForwardTransform.Position[0] = CamProps.Target.v[0];
-        CameraForwardTransform.Position[1] = CamProps.Target.v[1];
-        CameraForwardTransform.Position[2] = CamProps.Target.v[2];
+
+        ScaleFloat3(CamForwardDirection.v, 100.0f);
+        CameraForwardTransform.Position[0] = CamProps.Target.v[0] + CamForwardDirection.v[0];
+        CameraForwardTransform.Position[1] = CamProps.Target.v[1] + CamForwardDirection.v[1];
+        CameraForwardTransform.Position[2] = CamProps.Target.v[2] + CamForwardDirection.v[2];
 
         // Read controller input from port 1 into a buffer
         GetControllerInput(&Input, JOYPAD_PORT_1);
@@ -175,6 +179,10 @@ int main()
         {
             // Rotate and move the camera based on joystick / D-PAD input. If the B button is held, pressing the UP and DOWN buttons on
             // the D-PAD will move the camera up and down based on its current up vector instead of forward and backward
+            //
+            // -- BUG --
+            // There is a bug somewhere that makes the camera rotate to 90 degrees downward every time the camera mode is switched to
+            // manual control mode. The controls still work fine, the camera just starts off looking down
             RotateCameraRelative(Input.StickStateNormalized[0] * CameraControlSpeed * DeltaTime, Input.StickStateNormalized[1] * CameraControlSpeed * DeltaTime, 0.0f, &CamProps);
             
             if (Input.HeldButtons.d_up)
@@ -185,7 +193,7 @@ int main()
                 }
                 else
                 {
-                    MoveCameraLateral(&CamProps.Position, &CamProps.Target, 50.0f * DeltaTime, false);
+                    MoveCameraLateral(&CamProps, 50.0f * DeltaTime, false);
                 }
             }
 
@@ -197,7 +205,7 @@ int main()
                 }
                 else
                 {
-                    MoveCameraLateral(&CamProps.Position, &CamProps.Target, -50.0f * DeltaTime, false);
+                    MoveCameraLateral(&CamProps, -50.0f * DeltaTime, false);
                 }
             }
 
@@ -289,12 +297,13 @@ int main()
         rdpq_set_prim_color(GetRainbowColor(ModelAngle * 0.42f));
         RenderModel(GearModel, &GearModelTransform1, true);
 
-        // Draw the Axis ("XYZ") model if it's enabled. We disable the Z buffer before we draw this so it will appear in top of everything.
-        // It's important that we only disable the Z buffer and draw this model AFTER everything else has been drawn, because otherwise
-        // everything would be drawn with no depth.
+        // Draw the Axis ("XYZ") model if it's enabled. We clear the depth buffer before we draw this so it will appear in top of everything.
+        // It's important that we only clear the Z buffer and draw this model AFTER everything else has been drawn, because otherwise
+        // everything would be drawn with no depth. I've chosen not to disable Z sorting because that causes an issue when rendering the Axis
+        // model where the X axis arrow would be visible through the Z axis arrow.
         if (DrawAxisModel == true)
         {
-            rdpq_mode_zbuf(false, false);
+            t3d_screen_clear_depth();
             RenderModel(AxisModel, &CameraForwardTransform, true);
         }
 
@@ -308,22 +317,21 @@ int main()
             rdpq_text_printf(NULL, 1, 5, 12, "MEM USED: %.2f KB", (HeapStats.used / 1024.0f) * 1.024f);
             rdpq_text_printf(NULL, 1, 5, 24, "UPTIME: %.2fs", UptimeMilliseconds() / 1000.0f);
             rdpq_text_printf(NULL, 1, 5, 36, "FPS: %d/%d (%.1f%%, DT=%.3fms)", FPS, TargetFPS, ((float)FPS / TargetFPS) * 100.0f, DeltaTime);
-            rdpq_text_printf(NULL, 1, 5, 48, "CAM MODE: %s", CameraModeStr);
+            rdpq_text_printf(NULL, 1, 5, 48, "CAM MODE: %s (%d)", CameraModeStr, CameraMode);
             
             if (DebugMode == 2)
             {
-                T3DVec3 CamForwardVector = GetForwardVector(CamProps.Position, CamProps.Target);
-
                 rdpq_text_printf(NULL, 1, 5, 60, "STICK NORM: X=%f || Y=%f", Input.StickStateNormalized[0], Input.StickStateNormalized[1]);
                 rdpq_text_printf(NULL, 1, 5, 72, "STICK: X=%d || Y=%d", Input.StickState[0], Input.StickState[1]);
                 rdpq_text_printf(NULL, 1, 5, 84, "CAM TGT: %.3f, %.3f, %.3f", CamProps.Target.v[0], CamProps.Target.v[1], CamProps.Target.v[2]);
                 rdpq_text_printf(NULL, 1, 5, 96, "CAM POS: %.3f, %.3f, %.3f", CamProps.Position.v[0], CamProps.Position.v[1], CamProps.Position.v[2]);
-                rdpq_text_printf(NULL, 1, 5, 108, "CAM FWD: %.3f, %.3f, %.3f", CamForwardVector.v[0], CamForwardVector.v[1], CamForwardVector.v[2]);
-                rdpq_text_printf(NULL, 1, 5, 120, "CAM UP: %.3f, %.3f, %.3f", CamProps.UpDir.v[0], CamProps.UpDir.v[1], CamProps.UpDir.v[2]);
+                rdpq_text_printf(NULL, 1, 5, 108, "CAM FWD: %.3f, %.3f, %.3f", CamProps.ForwardVector.v[0], CamProps.ForwardVector.v[1], CamProps.ForwardVector.v[2]);
+                rdpq_text_printf(NULL, 1, 5, 120, "CAM RGT: %.3f, %.3f, %.3f", CamProps.RightVector.v[0], CamProps.RightVector.v[1], CamProps.RightVector.v[2]);
+                rdpq_text_printf(NULL, 1, 5, 132, "CAM UP: %.3f, %.3f, %.3f", CamProps.UpVector.v[0], CamProps.UpVector.v[1], CamProps.UpVector.v[2]);
             }
         }
 
-        EndFrame();
+        EndFrame(&CamProps);
     }
 
     t3d_destroy();

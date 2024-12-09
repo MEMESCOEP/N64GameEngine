@@ -119,7 +119,6 @@ void MoveCameraToPoint(struct CameraProperties* CamProps, T3DVec3);
 // ----- Drawing functions -----
 void DrawString(char* Text, int FontID, int XPos, int YPos);
 void RenderModel(T3DModel* ModelToRender, struct ModelTransform* Transform, bool UpdateMatrix);
-void RenderMultiModel(T3DModel* ModelToRender, struct ModelTransform* Transform, bool UpdateMatrix);
 void ClearScreen(color_t ClearColor);
 void UpdateLightProperties(int LightCount, uint8_t* GlobalLightColor, uint8_t* SunColor, T3DVec3* SunDirection);
 void UpdateViewport(T3DViewport* Viewport, struct CameraProperties CamProps);

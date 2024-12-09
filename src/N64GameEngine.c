@@ -285,11 +285,11 @@ void RotateCameraToAngle(float XAngle, float YAngle, struct CameraProperties* Ca
 // Rotate the camera by x degrees (relative to its current angles)
 void RotateCameraRelative(float XAngle, float YAngle, float ZAngle, struct CameraProperties* CamProps)
 {
-    float USRadius = VectorDistance(CamProps->Position, CamProps->Target);
+    T3DVec3 TargetRotation = (T3DVec3){{0.0f, 0.0f, 0.0f}};
+    float USRadius = t3d_vec3_distance(&CamProps->Position, &CamProps->Target);
     float XRadians = T3D_DEG_TO_RAD(XAngle);
     float YRadians = T3D_DEG_TO_RAD(YAngle);
     float ZRadians = T3D_DEG_TO_RAD(ZAngle);
-    T3DVec3 TargetRotation = (T3DVec3){{0.0f, 0.0f, 0.0f}};
 
     // Calculate the direction from the camera to the target
     TargetRotation.v[0] = CamProps->Target.v[0] - CamProps->Position.v[0];
@@ -405,24 +405,6 @@ void RenderModel(T3DModel* ModelToRender, struct ModelTransform* Transform, bool
     t3d_matrix_set(Transform->ModelMatrixFP, true);
     rspq_block_run(Transform->RenderBlock);
     t3d_matrix_pop(1);
-}
-
-// [USES TRANSFORM] Render a 3D model without pushing / popping a matrix. The push / pop action should be done externally with the "t3d_matrix_push_pos" and "t3d_matrix_pop" functions
-void RenderMultiModel(T3DModel* ModelToRender, struct ModelTransform* Transform, bool UpdateMatrix)
-{
-    if (UpdateMatrix == true)
-    {
-        UpdateTransformMatrix(Transform);
-    }
-
-    // Render the model
-    if (Transform->RenderBlock == NULL)
-    {
-        AssignNewRenderBlock(Transform, ModelToRender);
-    }    
-
-    t3d_matrix_set(Transform->ModelMatrixFP, true);
-    rspq_block_run(Transform->RenderBlock);
 }
 
 // Clear the screen and adjust lighting information

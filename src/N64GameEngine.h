@@ -76,10 +76,10 @@ extern rspq_block_t* DrawCommands;
 extern T3DVec3 WorldUpVector;
 extern float CameraClipping[2];
 extern float DeltaTime;
+extern float TargetFPS;
 extern float FOV3D;
+extern float FPS;
 extern int FrameCount;
-extern int TargetFPS;
-extern int FPS;
 
 
 /* FUNCTIONS */
@@ -101,7 +101,7 @@ void AssignNewRenderBlock(struct ModelTransform* Transform, T3DModel* ModelToRen
 
 // ----- Timing functions -----
 long long UptimeMilliseconds();
-void SetTargetFPS(int Target);
+void SetTargetFPS(float Target);
 float MSPFFromFPS(int FPSToConvert);
 float MSToTicks(int MS);
 float FPSToMS(int FPSToConvert);

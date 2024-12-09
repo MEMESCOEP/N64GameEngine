@@ -44,10 +44,10 @@ long long DTStart = 0;
 float CameraClipping[2] = {10.0f, 200.0f};
 float JoystickRange = 65.0f; // This is used to reduce erroneous inputs (EX: The player isn't touching a joystick but it still responds with a very small value)
 float DeltaTime = 0.0f;
+float TargetFPS = 60;
+float FPS = 0;
 int FPSCheckCount = 0;
 int FrameCount = 0;
-int TargetFPS = 60;
-int FPS = 0;
 
 
 /* FUNCTIONS */
@@ -150,7 +150,7 @@ void InitSystem(resolution_t Resolution, bitdepth_t BitDepth, uint32_t BufferNum
     DebugPrint("[== N64 Game Engine ==]\n", ALL);    
     DebugPrint("[INFO] >> Initializing display (%dx%d @ %dBPP)...\n", MINIMAL, Resolution.width, Resolution.height, (BitDepth + 1) * 16);
     display_init(Resolution, BitDepth, BufferNum, GAMMA_NONE, Filters);
-    SetTargetFPS(60);
+    SetTargetFPS(TargetFPS);
 
     DebugPrint("[INFO] >> Initializing timer...\n", ALL);
     timer_init();
@@ -167,6 +167,9 @@ void InitSystem(resolution_t Resolution, bitdepth_t BitDepth, uint32_t BufferNum
 
     DebugPrint("[INFO] >> Initializing Tiny3D...\n", ALL);
     t3d_init((T3DInitParams){});
+
+    DebugPrint("[INFO] >> Updating heap statistics...\n", ALL);
+    sys_get_heap_stats(&HeapStats);
 
     DebugPrint("[INFO] >> All engine init stages done.\n", ALL);
 }
@@ -251,12 +254,13 @@ long long UptimeMilliseconds()
     return TIMER_MICROS_LL(timer_ticks()) / 1000;
 }
 
-// Determines the number of milliseconds to wait to reach the target framerate
-void SetTargetFPS(int Target)
+// Sets the target framerate. Note that this will be limited by the refresh rate of the N64, so in
+// some regions (PAL)  this will be slower than 60 FPS (NTSC)
+void SetTargetFPS(float Target)
 {
     TargetFPS = Target;
     display_set_fps_limit(TargetFPS);
-    DebugPrint("[INFO] >> Set target FPS to %d.\n", MINIMAL, TargetFPS);
+    DebugPrint("[INFO] >> Set target FPS to %f.\n", MINIMAL, TargetFPS);
 }
 
 // ----- Camera Functions -----

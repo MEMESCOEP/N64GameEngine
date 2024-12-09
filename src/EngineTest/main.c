@@ -45,7 +45,9 @@ float FencePositions[4][2] = {{175.0f, 175.0f}, {175.0f, -175.0f}, {-175.0f, -17
 float BushPositions[4][2] = {{175.0f, 175.0f}, {175.0f, -175.0f}, {-175.0f, -175.0f}, {-175.0f, 175.0f}};
 float HeadPositions[4][2] = {{175.0f, 175.0f}, {175.0f, -175.0f}, {-175.0f, -175.0f}, {-175.0f, 175.0f}};
 float CameraControlSpeed = 50.0f;
+float InstalledMemoryKB = 0.0f;
 float RotationSpeed = 0.15f;
+float UsedMemoryKB = 0.0f;
 float ModelAngle = 0.0f;
 bool DrawAxisModel = false;
 int CameraMode = 0;
@@ -70,6 +72,9 @@ int main()
     InitSystem(RESOLUTION_320x240, DEPTH_16_BPP, 3, FILTERS_RESAMPLE_ANTIALIAS, true);
 
     debugf("\n[== N64 Game Engine Test Scene ==]\n");
+    DebugPrint("[INFO] >> Converting installed memory amount to KB...\n", MINIMAL);
+    InstalledMemoryKB = HeapStats.total / 1024.0f;
+
     DebugPrint("[INFO] >> Registering fonts...\n", MINIMAL);
     NewFont = RegisterFont("rom:/DEBUG.font64", 1);
     
@@ -280,15 +285,17 @@ int main()
             RenderModel(AxisModel, &CameraForwardTransform, true);
         }
 
-        // Enter 2D mode. All 2D graphics operations should (usually) take place in 2D mode. 2D text should be drawn after LAST
-        // else unless you have a specific reason not to
+        // Enter 2D mode. All 2D graphics operations should (usually) take place in 2D mode. 2D text should be drawn LAST unless you have a
+        // specific reason not to
         Start2DMode();
 
         if (DebugMode > 0)
         {
-            rdpq_text_printf(NULL, 1, 5, 12, "MEM USED: %.2f KB", (HeapStats.used / 1024.0f) * 1.024f);
+            UsedMemoryKB = HeapStats.used / 1024.0f;
+            
+            rdpq_text_printf(NULL, 1, 5, 12, "MEM USED: %.2f / %.2f KB (%.2f%%)", UsedMemoryKB, InstalledMemoryKB, (UsedMemoryKB / InstalledMemoryKB) * 100.0f);
             rdpq_text_printf(NULL, 1, 5, 24, "UPTIME: %.2fs", UptimeMilliseconds() / 1000.0f);
-            rdpq_text_printf(NULL, 1, 5, 36, "FPS: %d/%d (%.1f%%, DT=%.3fms)", FPS, TargetFPS, ((float)FPS / TargetFPS) * 100.0f, DeltaTime);
+            rdpq_text_printf(NULL, 1, 5, 36, "FPS: %.2f/%.2f (%.1f%%, DT=%.3fms)", FPS, TargetFPS, ((float)FPS / TargetFPS) * 100.0f, DeltaTime);
             rdpq_text_printf(NULL, 1, 5, 48, "CAM MODE: %s (%d)", CameraModeStr, CameraMode);
             
             if (DebugMode == 2)

@@ -57,7 +57,9 @@ struct ControllerState
 
 // Stores world space transform information like SRT matrix data
 // Note that the rotation (euler angles here) is in degrees
-// Manually creating a transform is not recommended
+// Manually creating a transform is not recommended, you should
+// try to use CreateNewModelTransform and UpdateTransformMatrix
+// wherever possible
 struct ModelTransform
 {
     rspq_block_t* RenderBlock;

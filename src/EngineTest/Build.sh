@@ -11,4 +11,4 @@ fi
 
 echo
 echo Running Ares...
-$PWD/Ares/ares --system Nintendo 64 $PWD/EngineTest.z64
+$PWD/../Utilities/Ares/ares --system Nintendo 64 $PWD/EngineTest.z64

@@ -32,21 +32,15 @@ struct CameraProperties DefaultCameraProperties = {
 
 enum EngineDebugModes CurrentDebugMode = MINIMAL;
 heap_stats_t HeapStats;
-rspq_block_t* DrawCommands = NULL;
 surface_t* DisplaySurface = NULL;
 surface_t* DepthBuffer;
 T3DVec3 WorldUpVector = {{0.0f, 1.0f, 0.0f}};
 long long LastHeapStatsUpdate = 0;
-long long LastFPSUpdate = 0;
-long long LastDeltaTime = 0;
-long long FPSStart = 0;
-long long DTStart = 0;
 float CameraClipping[2] = {10.0f, 200.0f};
 float JoystickRange = 65.0f; // This is used to reduce erroneous inputs (EX: The player isn't touching a joystick but it still responds with a very small value)
 float DeltaTime = 0.0f;
 float TargetFPS = 60;
 float FPS = 0;
-int FPSCheckCount = 0;
 int FrameCount = 0;
 
 
@@ -148,7 +142,7 @@ void InitSystem(resolution_t Resolution, bitdepth_t BitDepth, uint32_t BufferNum
     debug_init_usblog();
 
     DebugPrint("[== N64 Game Engine ==]\n", ALL);    
-    DebugPrint("[INFO] >> Initializing display (%dx%d @ %dBPP)...\n", MINIMAL, Resolution.width, Resolution.height, (BitDepth + 1) * 16);
+    DebugPrint("[INFO] >> Initializing display (%dx%d @ %dBPP, %d buffers)...\n", MINIMAL, Resolution.width, Resolution.height, (BitDepth + 1) * 16, BufferNum);
     display_init(Resolution, BitDepth, BufferNum, GAMMA_NONE, Filters);
     SetTargetFPS(TargetFPS);
 
@@ -177,14 +171,7 @@ void InitSystem(resolution_t Resolution, bitdepth_t BitDepth, uint32_t BufferNum
 // Update all engine data when required
 void UpdateEngine(struct CameraProperties* CamProps)
 {
-    // Update FPS reading every x millisecond(s)
-    // This has been commented out because we don't need to do it when calling display_get_fps, which has a slower update time but is slightly more accurate
-    /*if (UptimeMilliseconds() - LastFPSUpdate >= FPS_UPDATE_MS)
-    {
-        LastFPSUpdate = UptimeMilliseconds();
-        FPS = FPSCheckCount * (1000.0f / FPS_UPDATE_MS);
-        FPSCheckCount = 0;
-    }*/
+    UpdateCameraDirections(CamProps);
 
     // Update heap statistics every x millisecond(s)
     if (UptimeMilliseconds() - LastHeapStatsUpdate >= HEAPSTATS_UPDATE_MS)
@@ -193,11 +180,9 @@ void UpdateEngine(struct CameraProperties* CamProps)
         sys_get_heap_stats(&HeapStats);
     }
 
-    FPSCheckCount++;
     FrameCount++;
     DeltaTime = display_get_delta_time();
     FPS = display_get_fps();
-    UpdateCameraDirections(CamProps);
 }
 
 // ----- Registration functions -----

@@ -18,7 +18,6 @@
 
 /* DEFINITIONS */
 #define HEAPSTATS_UPDATE_MS 100
-#define FPS_UPDATE_MS 250
 
 
 /* VARIABLES */
@@ -72,7 +71,6 @@ struct ModelTransform
 
 extern struct CameraProperties DefaultCameraProperties;
 extern heap_stats_t HeapStats;
-extern rspq_block_t* DrawCommands;
 extern T3DVec3 WorldUpVector;
 extern float CameraClipping[2];
 extern float DeltaTime;

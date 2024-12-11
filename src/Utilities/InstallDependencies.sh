@@ -1,6 +1,7 @@
 #!/bin/bash
 ### OVERVIEW ###
 # This script downloads a prebuilt MIPS toolchain and installs it. It also installs libdragon, tiny3d, and ares.
+# It must be called like so: source InstallDependencies.sh
 
 
 ## VARIABLES ##
@@ -14,7 +15,8 @@ echo Setting N64_INST to \"$InstallPath\"...
 export N64_INST=$InstallPath
 
 echo Installing build dependencies...
-sudo apt-get install build-essential texinfo git pkg-config libgtk-3-dev libcanberra-gtk-module libgl-dev libasound2-dev
+sudo apt-get update
+sudo apt-get install -y build-essential texinfo git pkg-config libgtk-3-dev libcanberra-gtk-module libgl-dev libasound2-dev
 
 echo ""
 echo Downloading and installing prebuild toolchain...

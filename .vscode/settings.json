@@ -1,5 +1,6 @@
 {
     "files.associations": {
-        "n64gameengine.h": "c"
+        "n64gameengine.h": "c",
+        "assert.h": "c"
     }
 }

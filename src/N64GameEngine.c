@@ -10,6 +10,7 @@
 /* LIBRARIES */
 #include <stdarg.h>
 #include <unistd.h>
+#include "assert.h"
 #include <libdragon.h>
 #include <t3d/t3d.h>
 #include <t3d/t3dmath.h>
@@ -41,6 +42,7 @@ float JoystickRange = 65.0f; // This is used to reduce erroneous inputs (EX: The
 float DeltaTime = 0.0f;
 float TargetFPS = 60;
 float FPS = 0;
+bool DebugIsInitialized = false;
 int FrameCount = 0;
 
 
@@ -60,8 +62,9 @@ enum EngineDebugModes GetDebugMode()
     return CurrentDebugMode;
 }
 
-// Print a formatted or unformatted message to a console (only works if a console is available)
-// You can use the following format specifiers:
+// Print a formatted or unformatted message to a console. Note that this only works
+// if a console is available and debugging has been initialized. You can use the
+// following format specifiers:
 //  %d -> Integer
 //  %f -> Float & double
 //  %s -> String
@@ -70,7 +73,7 @@ enum EngineDebugModes GetDebugMode()
 //  %m -> 4x4 Matrix (T3DMat4)
 void DebugPrint(char* Message, enum EngineDebugModes DebugMode, ...)
 {
-    if (CurrentDebugMode == NONE || (DebugMode == ALL && CurrentDebugMode == MINIMAL))
+    if (DebugIsInitialized == false || CurrentDebugMode == NONE || (DebugMode == ALL && CurrentDebugMode == MINIMAL))
         return;
 
     if (CurrentDebugMode == ALL || DebugMode == ALL || DebugMode == CurrentDebugMode)
@@ -136,10 +139,14 @@ void DebugPrint(char* Message, enum EngineDebugModes DebugMode, ...)
 
 // ----- Engine functions -----
 // Initializes the display, debug, timer, rdpq, etc
-void InitSystem(resolution_t Resolution, bitdepth_t BitDepth, uint32_t BufferNum, filter_options_t Filters, bool Init3D)
+void InitSystem(resolution_t Resolution, bitdepth_t BitDepth, uint32_t BufferNum, filter_options_t Filters, bool InitDebug)
 {
-    debug_init_isviewer();
-    debug_init_usblog();
+    if (InitDebug == true)
+    {
+        debug_init_isviewer();
+        debug_init_usblog();
+        DebugIsInitialized = true;
+    }
 
     DebugPrint("[== N64 Game Engine ==]\n", ALL);    
     DebugPrint("[INFO] >> Initializing display (%dx%d @ %dBPP, %d buffers)...\n", MINIMAL, Resolution.width, Resolution.height, (BitDepth + 1) * 16, BufferNum);
@@ -152,9 +159,9 @@ void InitSystem(resolution_t Resolution, bitdepth_t BitDepth, uint32_t BufferNum
     DebugPrint("[INFO] >> Initializing controllers...\n", ALL);
     controller_init();
 
-    DebugPrint("[INFO] >> Initializing filesystem & assets (DEFAULT LOCATION: %d)...\n", ALL, DFS_DEFAULT_LOCATION);
+    DebugPrint("[INFO] >> Initializing filesystem & assets (DEF_LOC: %d)...\n", ALL, DFS_DEFAULT_LOCATION);
     asset_init_compression(2);
-    dfs_init(DFS_DEFAULT_LOCATION);
+    assert(dfs_init(DFS_DEFAULT_LOCATION) == DFS_ESUCCESS);
 
     DebugPrint("[INFO] >> Initializing RDPQ...\n", ALL);
     rdpq_init();

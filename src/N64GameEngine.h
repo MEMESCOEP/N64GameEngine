@@ -87,7 +87,7 @@ enum EngineDebugModes GetDebugMode();
 void DebugPrint(char* Message, enum EngineDebugModes DebugMode, ...);
 
 // ----- Engine functions -----
-void InitSystem(resolution_t Resolution, bitdepth_t BitDepth, uint32_t BufferNum, filter_options_t Filters, bool Init3D);
+void InitSystem(resolution_t Resolution, bitdepth_t BitDepth, uint32_t BufferNum, filter_options_t Filters, bool InitDebug);
 void UpdateEngine(struct CameraProperties* CamProps);
 
 // ----- Registration functions -----

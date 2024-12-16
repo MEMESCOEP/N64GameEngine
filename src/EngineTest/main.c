@@ -64,12 +64,12 @@ color_t GetRainbowColor(float s) {
 
 int main()
 {
-    // Set the engine's debug mode to output all avaliable debug information
+    // Set the engine's debug mode to output all available debug information
     SetDebugMode(ALL);
 
-    // Initialize the system and Tiny3D
-    // We use 320x240@16 here because in this case it strikes a balance between performance and video quality
-    InitSystem(RESOLUTION_320x240, DEPTH_16_BPP, 3, FILTERS_RESAMPLE_ANTIALIAS, true);
+    // Initialize the system and Tiny3D. 320x240@16 mode is used here because it strikes a balance between performance and
+    // video quality in this case. The display is also instructed to use resample antialiasing, with 1 buffer.
+    InitSystem(RESOLUTION_320x240, DEPTH_16_BPP, 1, FILTERS_RESAMPLE_ANTIALIAS, true);
 
     debugf("\n[== N64 Game Engine Test Scene ==]\n");
     DebugPrint("[INFO] >> Converting installed memory amount to KB...\n", MINIMAL);

@@ -69,10 +69,17 @@ struct ModelTransform
     T3DVec3 Scale;
 };
 
+struct ModelObject
+{
+    struct ModelTransform Transform;
+    T3DModel* Model;
+};
+
 extern struct CameraProperties DefaultCameraProperties;
 extern heap_stats_t HeapStats;
 extern T3DVec3 WorldUpVector;
 extern float CameraClipping[2];
+extern float UsedMemPercentage;
 extern float DeltaTime;
 extern float TargetFPS;
 extern float FOV3D;
@@ -90,12 +97,11 @@ void DebugPrint(char* Message, enum EngineDebugModes DebugMode, ...);
 void InitSystem(resolution_t Resolution, bitdepth_t BitDepth, uint32_t BufferNum, filter_options_t Filters, bool InitDebug);
 void UpdateEngine(struct CameraProperties* CamProps);
 
-// ----- Registration functions -----
-rdpq_font_t *RegisterFont(char* FontPath, int FontID);
-
 // ----- Creation functions -----
 struct ModelTransform CreateNewModelTransform();
 void AssignNewRenderBlock(struct ModelTransform* Transform, T3DModel* ModelToRender);
+void CreateNewModelObject(struct ModelObject* ModelOBJToUpdate, char* ModelPath);
+void CreateNewModelObjectPredefined(struct ModelObject* ModelOBJToUpdate, T3DModel* Model);
 
 // ----- Timing functions -----
 long long UptimeMilliseconds();
@@ -116,7 +122,8 @@ void MoveCameraToPoint(struct CameraProperties* CamProps, T3DVec3);
 
 // ----- Drawing functions -----
 void DrawString(char* Text, int FontID, int XPos, int YPos);
-void RenderModel(T3DModel* ModelToRender, struct ModelTransform* Transform, bool UpdateMatrix);
+void RenderModel(struct ModelObject ModelOBJ, bool UpdateMatrix);
+void RenderModelWithTransform(T3DModel* ModelToRender, struct ModelTransform* Transform, bool UpdateMatrix);
 void ClearScreen(color_t ClearColor);
 void UpdateLightProperties(int LightCount, uint8_t* GlobalLightColor, uint8_t* SunColor, T3DVec3* SunDirection);
 void UpdateViewport(T3DViewport* Viewport, struct CameraProperties CamProps);

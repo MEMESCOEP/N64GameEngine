@@ -13,55 +13,55 @@
 #include <t3d/t3dmodel.h>
 #include <t3d/t3ddebug.h>
 #include "../N64GameEngine.h"
+#include "../ColorUtils.h"
 #include "../MathUtils.h"
+#include "../TextUtils.h"
+#include "../Globals.h"
 
 
 /* VARIABLES */
 struct CameraProperties CamProps;
 struct ControllerState Input;
 struct ModelTransform CameraForwardTransform;
-struct ModelTransform FloorModelTransform;
-struct ModelTransform FenceModelTransform;
-struct ModelTransform N64ModelTransform;
 struct ModelTransform FenceModelTransforms[4];
 struct ModelTransform BushModelTransforms[4];
 struct ModelTransform HeadModelTransforms[4];
+struct ModelObject FloorObject;
+struct ModelObject N64Object;
 T3DViewport Viewport;
-rdpq_font_t* NewFont;
+rdpq_font_t* DebugFont;
+rdpq_font_t* CamFont;
 T3DModel* HeadModels[4];
-T3DModel* FloorModel;
-T3DModel* FenceModel;
 T3DModel* AxisModel;
 T3DModel* BushModel;
-T3DModel* N64Model;
 T3DVec3 CamForwardDirection;
 T3DVec3 SunDirection = {{-1.0f, 1.0f, 1.0f}};
+color_t TimeColors[3] = {(color_t){0x94, 0xC4, 0xF2, 0xFF}, (color_t){0x45, 0x4A, 0x73, 0xFF}, (color_t){0x0A, 0x09, 0x13, 0xFF}};
+color_t CamModeColor;
 color_t SkyColor = (color_t){0x94, 0xC4, 0xF2, 0xFF};
+uint8_t SunColors[3][4] = {{0xFB, 0xFF, 0xCD, 0xFF}, {0x4E, 0x54, 0x82, 0xFF}, {0x1D, 0x19, 0x36, 0xFF}};
 uint8_t GlobalLightColor[4] = {0x50, 0x50, 0x64, 0xFF};
 uint8_t SunColor[4] = {0xFB, 0xFF, 0xCD, 0xFF};
 char* HeadModelPaths[4] = {"rom:/Pikachu.t3dm", "rom:/Mario.t3dm", "rom:/Link.t3dm", "rom:/FoxMcCloud.t3dm"};
+char* CamModeDisplayText = "-- CAMERA MODE --";
 char* CameraModeStr = "Orbit";
 float FencePositions[4][2] = {{175.0f, 175.0f}, {175.0f, -175.0f}, {-175.0f, -175.0f}, {-175.0f, 175.0f}};
 float BushPositions[4][2] = {{175.0f, 175.0f}, {175.0f, -175.0f}, {-175.0f, -175.0f}, {-175.0f, 175.0f}};
 float HeadPositions[4][2] = {{175.0f, 175.0f}, {175.0f, -175.0f}, {-175.0f, -175.0f}, {-175.0f, 175.0f}};
 float CameraControlSpeed = 50.0f;
 float InstalledMemoryKB = 0.0f;
+float CamTextTimeLeft = 0.0f;
+float SkyLerpProgress = 0.0f;
 float RotationSpeed = 0.15f;
-float UsedMemoryKB = 0.0f;
 float ModelAngle = 0.0f;
 bool DrawAxisModel = false;
+bool ShowCamMode = false;
 int CameraMode = 0;
 int DebugMode = 1;
+int TimeColor = 0;
 
 
 /* FUNCTIONS */
-color_t GetRainbowColor(float s) {
-    float r = fm_sinf(s + 0.0f) * 127.0f + 128.0f;
-    float g = fm_sinf(s + 2.0f) * 127.0f + 128.0f;
-    float b = fm_sinf(s + 4.0f) * 127.0f + 128.0f;
-    return RGBA32(r, g, b, 255);
-}
-
 int main()
 {
     // Set the engine's debug mode to output all available debug information
@@ -69,14 +69,15 @@ int main()
 
     // Initialize the system and Tiny3D. 320x240@16 mode is used here because it strikes a balance between performance and
     // video quality in this case. The display is also instructed to use resample antialiasing, with 1 buffer.
-    InitSystem(RESOLUTION_320x240, DEPTH_16_BPP, 1, FILTERS_RESAMPLE_ANTIALIAS, true);
+    InitSystem(RESOLUTION_320x240, DEPTH_16_BPP, 2, FILTERS_RESAMPLE_ANTIALIAS, true);
 
     debugf("\n[== N64 Game Engine Test Scene ==]\n");
     DebugPrint("[INFO] >> Converting installed memory amount to KB...\n", MINIMAL);
     InstalledMemoryKB = HeapStats.total / 1024.0f;
 
     DebugPrint("[INFO] >> Registering fonts...\n", MINIMAL);
-    NewFont = RegisterFont("rom:/DEBUG.font64", 1);
+    DebugFont = RegisterFontBasic("rom:/DEBUG.font64", COLOR_WHITE, COLOR_TRANSPARENT, 1);
+    CamFont = RegisterFontBasic("rom:/DEBUG.font64", COLOR_WHITE, COLOR_TRANSPARENT, 2);
     
     // Set up the camera and the viewport
     DebugPrint("[INFO] >> Creating T3D viewport...\n", MINIMAL);
@@ -89,18 +90,20 @@ int main()
     CamProps.FOV = 90.0f;
 
     // Load models and set up transforms
-    DebugPrint("[INFO] >> Loading models and setting up transforms...\n", MINIMAL);
-    FloorModel = t3d_model_load("rom:/Floor.t3dm");
-    FenceModel = t3d_model_load("rom:/Fence.t3dm");
-    AxisModel = t3d_model_load("rom:/XYZ.t3dm");
-    BushModel = t3d_model_load("rom:/StretchyBush.t3dm");
-    N64Model = t3d_model_load("rom:/N64.t3dm");
-
-    // Commented out because I haven't yet decided what models to use
+    // This is commented out because I haven't yet decided what models to use
     /*for (int ModelIndex = 0; ModelIndex < 4; ModelIndex++)
     {
         HeadModels[ModelIndex] = t3d_model_load(HeadModelPaths[ModelIndex]);
     }*/
+
+    DebugPrint("[INFO] >> Loading models...\n", MINIMAL);
+    CreateNewModelObject(&FloorObject, "rom:/Floor.t3dm");
+    CreateNewModelObject(&N64Object, "rom:/N64.t3dm");
+
+    AxisModel = t3d_model_load("rom:/XYZ.t3dm");
+    BushModel = t3d_model_load("rom:/StretchyBush.t3dm");
+
+    DebugPrint("[INFO] >> Setting up transforms...\n", MINIMAL);
 
     // Used to render the axis (XYZ) model
     CameraForwardTransform = CreateNewModelTransform();
@@ -108,17 +111,11 @@ int main()
     CameraForwardTransform.Scale = (T3DVec3){{0.1f, 0.1f, 0.1f}};
 
     // This scale may need to be tweaked to prevent "jitter" and texture distortion
-    FloorModelTransform = CreateNewModelTransform();
-    FloorModelTransform.Position = (T3DVec3){{0.0f, -100.0f, 0.0f}};
-    FloorModelTransform.Scale = (T3DVec3){{0.75f, 1.0f, 0.75f}};
+    FloorObject.Transform.Position = (T3DVec3){{0.0f, -100.0f, 0.0f}};
+    FloorObject.Transform.Scale = (T3DVec3){{0.75f, 1.0f, 0.75f}};
 
-    FenceModelTransform = CreateNewModelTransform();
-    FenceModelTransform.Position = (T3DVec3){{0.0f, -75.0f, -125.0f}};
-    FenceModelTransform.Scale = (T3DVec3){{0.25f, 0.25f, 0.25f}};
-
-    N64ModelTransform = CreateNewModelTransform();
-    N64ModelTransform.Position.v[1] = -40.0f;
-    N64ModelTransform.Scale = (T3DVec3){{0.075f, 0.075f, 0.075f}};
+    N64Object.Transform.Position.v[1] = -40.0f;
+    N64Object.Transform.Scale = (T3DVec3){{0.075f, 0.075f, 0.075f}};
 
     t3d_vec3_norm(&SunDirection);
 
@@ -145,11 +142,31 @@ int main()
         // models if the matrix changes more than once per frame.
         ModelAngle += 1.5f * DeltaTime;
         CamForwardDirection = CamProps.ForwardVector;
-        N64ModelTransform.Rotation.v[0] = ModelAngle * -RotationSpeed;
-        N64ModelTransform.Rotation.v[1] = ModelAngle * -RotationSpeed;
+        N64Object.Transform.Rotation.v[0] = ModelAngle * -RotationSpeed;
+        N64Object.Transform.Rotation.v[1] = ModelAngle * -RotationSpeed;
 
         ScaleFloat3(CamForwardDirection.v, 100.0f);
         t3d_vec3_add(&CameraForwardTransform.Position, &CamProps.Target, &CamForwardDirection);
+
+        // Slowly fade the sky and global light colors to sunset
+        Lerp1DUint8Array(SunColor, SunColors[TimeColor], 4, SkyLerpProgress);
+        LerpColor(&SkyColor, TimeColors[TimeColor], SkyLerpProgress);
+        SkyLerpProgress += 0.005f * DeltaTime;
+
+        if (SkyLerpProgress > 1.0f)
+        {
+            SkyLerpProgress = 1.0f;
+        }
+
+        if (FrameCount % 900 == 0 && FrameCount > 1)
+        {
+            SkyLerpProgress = 0.0f;
+            TimeColor++;
+            
+            if (TimeColor > 2) TimeColor = 0;
+        }
+
+        DebugPrint("Sky color is %C but it should be %C || Change factor -> %f\n", ALL, SkyColor, TimeColors[TimeColor], SkyLerpProgress);
 
         // Read input from controller port 1 into a buffer
         GetControllerInput(&Input, JOYPAD_PORT_1);
@@ -231,6 +248,9 @@ int main()
         //  2: Static
         if (Input.PressedButtons.a)
         {
+            CamTextTimeLeft = 2.25f;
+            CamModeColor = COLOR_WHITE;
+            ShowCamMode = true;
             CameraMode++;
 
             if (CameraMode > 2) CameraMode = 0;
@@ -266,50 +286,70 @@ int main()
         UpdateLightProperties(1, GlobalLightColor, SunColor, &SunDirection);
 
         // Render models
-        RenderModel(FloorModel, &FloorModelTransform, true);
-        RenderModel(N64Model, &N64ModelTransform, true);
+        RenderModel(FloorObject, true);
+        RenderModel(N64Object, true);
         
         for (int ModelIndex = 0; ModelIndex < 4; ModelIndex++)
         {
             //RenderModel(FenceModel, &FenceModelTransforms[ModelIndex], true);
-            RenderModel(BushModel, &BushModelTransforms[ModelIndex], true);
-        }        
+            RenderModelWithTransform(BushModel, &BushModelTransforms[ModelIndex], true);
+        }
 
-        // Draw the Axis ("XYZ") model if it's enabled. We clear the depth buffer before we draw this so it will appear in top of everything.
-        // It's important that we only clear the depth buffer and draw this model AFTER everything else has been drawn, because otherwise
-        // everything would be drawn with no depth. I've chosen not to disable Z sorting because that causes an issue when rendering the Axis
-        // model where the X axis arrow would be visible through the Z axis arrow.
+        // Draw the Axis ("XYZ") model if it's enabled. The depth buffer is cleared before the model is rendered so it will appear in top of
+        // everything. It's important that you only clear the depth buffer and draw this model AFTER everything else has been drawn, because
+        // otherwise everything would be drawn with no depth. Z sorting is enabled because that causes an issue when rendering the model
+        // where the X axis arrow would be visible through the Z axis arrow.
         if (DrawAxisModel == true)
         {
             t3d_screen_clear_depth();
-            RenderModel(AxisModel, &CameraForwardTransform, true);
+            RenderModelWithTransform(AxisModel, &CameraForwardTransform, true);
         }
 
-        // Enter 2D mode. All 2D graphics operations should (usually) take place in 2D mode. 2D text should be drawn LAST unless you have a
-        // specific reason not to
+        // Enter 2D mode. In this mode, all 2D graphics are displayed on top of the 3D view. This makes it easier to add and show UI elements
+        // and text without interfering with the 3D scene. Note that you should enter 2D mode after 3D mode (if you are using 3D) to ensure
+        // that 2D graphics are drawn last.
         Start2DMode();
+
+        if (ShowCamMode == true)
+        {
+            if (CamTextTimeLeft <= 0.0f)
+            {
+                if (CamModeColor.a <= 10)
+                {
+                    ShowCamMode = false;    
+                }
+                
+                FadeAlpha(&CamModeColor, 0, 7.5f * DeltaTime);
+            }
+
+            CamTextTimeLeft -= 1.0f * DeltaTime; 
+            
+            rdpq_font_style(CamFont, 0, &(rdpq_fontstyle_t){
+                .color = CamModeColor,
+            });
+
+            rdpq_text_printf(NULL, 2, 160 - (PixelStrWidth(CamModeDisplayText, 1) / 2.0f), 180, CamModeDisplayText);
+            rdpq_text_printf(NULL, 2, 160 - (PixelStrWidth(CameraModeStr, 1) / 2.0f), 195, CameraModeStr);
+        }
 
         if (DebugMode > 0)
         {
-            UsedMemoryKB = HeapStats.used / 1024.0f;
-            
-            rdpq_text_printf(NULL, 1, 5, 12, "MEM USED: %.2f / %.2f KB (%.2f%%)", UsedMemoryKB, InstalledMemoryKB, (UsedMemoryKB / InstalledMemoryKB) * 100.0f);
+            rdpq_text_printf(NULL, 1, 5, 12, "MEM USED: %.2f / %.2f KB (%.2f%%)", HeapStats.used / 1024.0f, InstalledMemoryKB, UsedMemPercentage * 100.0f);
             rdpq_text_printf(NULL, 1, 5, 24, "UPTIME: %.2fs", UptimeMilliseconds() / 1000.0f);
             rdpq_text_printf(NULL, 1, 5, 36, "FPS: %.2f/%.2f (%.1f%%, DT=%.3fms)", FPS, TargetFPS, ((float)FPS / TargetFPS) * 100.0f, DeltaTime);
-            rdpq_text_printf(NULL, 1, 5, 48, "CAM MODE: %s (%d)", CameraModeStr, CameraMode);
             
             if (DebugMode == 2)
             {
-                rdpq_text_printf(NULL, 1, 5, 60, "STICK NORM: X=%f || Y=%f", Input.StickStateNormalized[0], Input.StickStateNormalized[1]);
-                rdpq_text_printf(NULL, 1, 5, 72, "STICK: X=%d || Y=%d", Input.StickState[0], Input.StickState[1]);
-                rdpq_text_printf(NULL, 1, 5, 84, "CAM TGT: %.3f, %.3f, %.3f", CamProps.Target.v[0], CamProps.Target.v[1], CamProps.Target.v[2]);
-                rdpq_text_printf(NULL, 1, 5, 96, "CAM POS: %.3f, %.3f, %.3f", CamProps.Position.v[0], CamProps.Position.v[1], CamProps.Position.v[2]);
-                rdpq_text_printf(NULL, 1, 5, 108, "CAM FWD: %.3f, %.3f, %.3f", CamProps.ForwardVector.v[0], CamProps.ForwardVector.v[1], CamProps.ForwardVector.v[2]);
-                rdpq_text_printf(NULL, 1, 5, 120, "CAM RGT: %.3f, %.3f, %.3f", CamProps.RightVector.v[0], CamProps.RightVector.v[1], CamProps.RightVector.v[2]);
-                rdpq_text_printf(NULL, 1, 5, 132, "CAM UP: %.3f, %.3f, %.3f", CamProps.UpVector.v[0], CamProps.UpVector.v[1], CamProps.UpVector.v[2]);
+                rdpq_text_printf(NULL, 1, 5, 48, "STICK NORM: X=%f || Y=%f", Input.StickStateNormalized[0], Input.StickStateNormalized[1]);
+                rdpq_text_printf(NULL, 1, 5, 60, "STICK: X=%d || Y=%d", Input.StickState[0], Input.StickState[1]);
+                rdpq_text_printf(NULL, 1, 5, 72, "CAM TGT: %.3f, %.3f, %.3f", CamProps.Target.v[0], CamProps.Target.v[1], CamProps.Target.v[2]);
+                rdpq_text_printf(NULL, 1, 5, 84, "CAM POS: %.3f, %.3f, %.3f", CamProps.Position.v[0], CamProps.Position.v[1], CamProps.Position.v[2]);
+                rdpq_text_printf(NULL, 1, 5, 96, "CAM FWD: %.3f, %.3f, %.3f", CamProps.ForwardVector.v[0], CamProps.ForwardVector.v[1], CamProps.ForwardVector.v[2]);
+                rdpq_text_printf(NULL, 1, 5, 108, "CAM RGT: %.3f, %.3f, %.3f", CamProps.RightVector.v[0], CamProps.RightVector.v[1], CamProps.RightVector.v[2]);
+                rdpq_text_printf(NULL, 1, 5, 120, "CAM UP: %.3f, %.3f, %.3f", CamProps.UpVector.v[0], CamProps.UpVector.v[1], CamProps.UpVector.v[2]);
             }
         }
-
+        
         EndFrame(&CamProps);
     }
 

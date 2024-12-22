@@ -49,4 +49,9 @@ float UnsignedKeepInRange(float Number, float Minimum, float Maximum);
 
 // ----- Array math -----
 void ScaleFloat3(float FloatToScale[3], float ScaleValue);
+
+// ----- Lerping -----
+uint8_t LerpUint8(int A, int B, float Time);
+void Lerp1DUint8Array(uint8_t ArrayToLerp[], uint8_t EndArray[], int ArraySize, float Time);
+int LerpInt(int A, int B, float Time);
 #endif

@@ -188,3 +188,25 @@ void AddVector3ToFloat3(float Float3[3], T3DVec3 VectorToAdd)
 {
     //Float3[0] = 
 }
+
+// ----- Lerping -----
+// Change A -> B over time
+uint8_t LerpUint8(int A, int B, float Time)
+{
+    return (uint8_t)(A + (B - A) * Time);
+}
+
+// Change each index of a 1-dimensional uint8_t array to the end result over time
+void Lerp1DUint8Array(uint8_t ArrayToLerp[], uint8_t EndArray[], int ArraySize, float Time)
+{
+    for (int ArrayIndex = 0; ArrayIndex < ArraySize; ArrayIndex++)
+    {
+        ArrayToLerp[ArrayIndex] = LerpUint8(ArrayToLerp[ArrayIndex], EndArray[ArrayIndex], Time);
+    }
+}
+
+// Change A -> B over time
+int LerpInt(int A, int B, float Time)
+{
+    return (int)(A + (B - A) * Time);
+}

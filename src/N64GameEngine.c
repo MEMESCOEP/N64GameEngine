@@ -38,11 +38,13 @@ surface_t* DepthBuffer;
 T3DVec3 WorldUpVector = {{0.0f, 1.0f, 0.0f}};
 long long LastHeapStatsUpdate = 0;
 float CameraClipping[2] = {10.0f, 200.0f};
+float UsedMemPercentage = 0.0f;
 float JoystickRange = 65.0f; // This is used to reduce erroneous inputs (EX: The player isn't touching a joystick but it still responds with a very small value)
 float DeltaTime = 0.0f;
 float TargetFPS = 60;
 float FPS = 0;
 bool DebugIsInitialized = false;
+bool VerifyEnoughMemory = true;
 int FrameCount = 0;
 
 
@@ -71,6 +73,7 @@ enum EngineDebugModes GetDebugMode()
 //  %c -> Character
 //  %v -> Vector3 (T3DVec3)
 //  %m -> 4x4 Matrix (T3DMat4)
+//  %C -> Color (color_t)
 void DebugPrint(char* Message, enum EngineDebugModes DebugMode, ...)
 {
     if (DebugIsInitialized == false || CurrentDebugMode == NONE || (DebugMode == ALL && CurrentDebugMode == MINIMAL))
@@ -123,6 +126,15 @@ void DebugPrint(char* Message, enum EngineDebugModes DebugMode, ...)
                         debugf("\n");
                     }
                 }
+                else if (*Message == 'C')
+                {
+                    color_t Color = va_arg(ArgList, color_t);
+                    debugf("{R=%d, G=%d, B=%d, A=%d}", Color.r, Color.g, Color.b, Color.a);
+                }
+                else if (*Message == '%')
+                {
+                    debugf("%%");
+                }
 
                 Message++;
             }
@@ -138,6 +150,15 @@ void DebugPrint(char* Message, enum EngineDebugModes DebugMode, ...)
 }
 
 // ----- Engine functions -----
+// Stops the game and throws an error if there isn't enough memory to keep the console from crashing (>= 97.5% used).
+void CheckAvailableMemory()
+{
+    if (VerifyEnoughMemory == true && UsedMemPercentage >= 0.975f)
+    {
+        assertf(UsedMemPercentage >= 0.975f, "The console ran out of memory!");
+    }    
+}
+
 // Initializes the display, debug, timer, rdpq, etc
 void InitSystem(resolution_t Resolution, bitdepth_t BitDepth, uint32_t BufferNum, filter_options_t Filters, bool InitDebug)
 {
@@ -185,6 +206,9 @@ void UpdateEngine(struct CameraProperties* CamProps)
     {
         LastHeapStatsUpdate = UptimeMilliseconds();
         sys_get_heap_stats(&HeapStats);
+        
+        UsedMemPercentage = (float)HeapStats.used / HeapStats.total;
+        CheckAvailableMemory();
     }
 
     FrameCount++;
@@ -192,20 +216,21 @@ void UpdateEngine(struct CameraProperties* CamProps)
     FPS = display_get_fps();
 }
 
-// ----- Registration functions -----
-// Registers a font to the specified font ID
-rdpq_font_t* RegisterFont(char* FontPath, int FontID)
+// ----- Creation functions -----
+// Creates a new render block and assigns it to a model transform
+void AssignNewRenderBlock(struct ModelTransform* Transform, T3DModel* ModelToRender)
 {
-    rdpq_font_t *NewFont = rdpq_font_load(FontPath);
-    rdpq_font_style(NewFont, 0, &(rdpq_fontstyle_t){
-        .color = RGBA32(0xFF, 0xFF, 0xFF, 0xFF),
-    });
+    if (Transform->RenderBlock != NULL)
+    {
+        rspq_wait();
+        rspq_block_free(Transform->RenderBlock);
+    }
 
-    rdpq_text_register_font(FontID, NewFont);
-    return NewFont;
+    rspq_block_begin();
+    t3d_model_draw(ModelToRender);
+    Transform->RenderBlock = rspq_block_end();
 }
 
-// ----- Creation functions -----
 // Creates a new model transform for use with 3D rendering
 struct ModelTransform CreateNewModelTransform()
 {
@@ -225,18 +250,22 @@ struct ModelTransform CreateNewModelTransform()
     return NewModelTransform;
 }
 
-// Creates a new render block and assigns it to a model transform
-void AssignNewRenderBlock(struct ModelTransform* Transform, T3DModel* ModelToRender)
+// Creates a new model object
+void CreateNewModelObject(struct ModelObject* ModelOBJToUpdate, char* ModelPath)
 {
-    if (Transform->RenderBlock != NULL)
-    {
-        rspq_wait();
-        rspq_block_free(Transform->RenderBlock);
-    }
+    CreateNewModelObjectPredefined(ModelOBJToUpdate, t3d_model_load(ModelPath));
+}
 
-    rspq_block_begin();
-    t3d_model_draw(ModelToRender);
-    Transform->RenderBlock = rspq_block_end();
+// Creates a new model object
+void CreateNewModelObjectPredefined(struct ModelObject* ModelOBJToUpdate, T3DModel* Model)
+{
+    ModelOBJToUpdate->Transform = CreateNewModelTransform();
+    ModelOBJToUpdate->Model = Model;
+
+    if (ModelOBJToUpdate->Transform.RenderBlock == NULL)
+    {
+        AssignNewRenderBlock(&ModelOBJToUpdate->Transform, ModelOBJToUpdate->Model);
+    }
 }
 
 // ----- Timing functions -----
@@ -379,20 +408,26 @@ void DrawString(char* Text, int FontID, int XPos, int YPos)
     rdpq_paragraph_free(par);
 }
 
-// [USES TRANSFORM] Render a 3D model at the specified SRT
-void RenderModel(T3DModel* ModelToRender, struct ModelTransform* Transform, bool UpdateMatrix)
+// Render a 3D model
+void RenderModel(struct ModelObject ModelOBJ, bool UpdateMatrix)
+{
+    RenderModelWithTransform(ModelOBJ.Model, &ModelOBJ.Transform, UpdateMatrix);
+}
+
+// Render a 3D model with the specified SRT
+void RenderModelWithTransform(T3DModel* ModelToRender, struct ModelTransform* Transform, bool UpdateMatrix)
 {
     if (UpdateMatrix == true)
     {
         UpdateTransformMatrix(Transform);
     }
 
-    // Render the model
     if (Transform->RenderBlock == NULL)
     {
         AssignNewRenderBlock(Transform, ModelToRender);
-    }    
+    }
 
+    // Render the model
     t3d_matrix_push_pos(1);
     t3d_matrix_set(Transform->ModelMatrixFP, true);
     rspq_block_run(Transform->RenderBlock);

@@ -5,3 +5,4 @@ src/EngineTest/EngineTest.z64
 /src/EngineTest/filesystem
 *.blend1
 /src/Utilities/Ares
+.vscode/settings.json

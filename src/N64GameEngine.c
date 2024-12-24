@@ -17,6 +17,7 @@
 #include <t3d/t3dmodel.h>
 #include <t3d/t3ddebug.h>
 #include "N64GameEngine.h"
+#include "ColorUtils.h"
 #include "MathUtils.h"
 
 
@@ -74,6 +75,7 @@ enum EngineDebugModes GetDebugMode()
 //  %v -> Vector3 (T3DVec3)
 //  %m -> 4x4 Matrix (T3DMat4)
 //  %C -> Color (color_t)
+//  %H -> HSV (HSVColor)
 void DebugPrint(char* Message, enum EngineDebugModes DebugMode, ...)
 {
     if (DebugIsInitialized == false || CurrentDebugMode == NONE || (DebugMode == ALL && CurrentDebugMode == MINIMAL))
@@ -130,6 +132,11 @@ void DebugPrint(char* Message, enum EngineDebugModes DebugMode, ...)
                 {
                     color_t Color = va_arg(ArgList, color_t);
                     debugf("{R=%d, G=%d, B=%d, A=%d}", Color.r, Color.g, Color.b, Color.a);
+                }
+                else if (*Message == 'H')
+                {
+                    struct HSVColor Color = va_arg(ArgList, struct HSVColor);
+                    debugf("{H=%f, S=%f, V=%f}", Color.H, Color.S, Color.V);
                 }
                 else if (*Message == '%')
                 {

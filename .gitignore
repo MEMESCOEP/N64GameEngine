@@ -6,3 +6,4 @@ src/EngineTest/EngineTest.z64
 *.blend1
 /src/Utilities/Ares
 .vscode/settings.json
+/.vscode

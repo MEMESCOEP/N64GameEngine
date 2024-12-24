@@ -16,12 +16,27 @@
 #include "N64GameEngine.h"
 
 
-/* DEFINITIONS */
+/* VARIABLES */
+struct HSVColor
+{
+    float H;
+    float S;
+    float V;
+};
 
 
 /* FUNCTIONS */
+// ----- Conversion functions -----
+void RGBAToHSV(color_t ColorToConvert, struct HSVColor* HSVStruct);
+void HSVToRGBA(struct HSVColor HSVToConvert, color_t* Color);
+
+// ----- Manipulation functions -----
 color_t GetRainbowColor(float Sin, int Alpha);
-void LerpColor(color_t* ColorToLerp, color_t EndColor, float Time);
+void LerpColor(color_t* ColorToLerp, color_t InitialColor, color_t TargetColor, float Time);
 void FadeAlpha(color_t* ColorToFade, int AlphaValue, float Time);
-bool AreColorsEqual(color_t Color1, color_t Color2);
+
+// ----- Compare functions -----
+bool AreRGBAColorsEqual(color_t Color1, color_t Color2);
+bool AreRGBColorsEqual(color_t Color1, color_t Color2);
+bool AreHSVColorsEqual(struct HSVColor Color1, struct HSVColor Color2);
 #endif

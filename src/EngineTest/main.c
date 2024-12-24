@@ -36,7 +36,7 @@ T3DModel* AxisModel;
 T3DModel* BushModel;
 T3DVec3 CamForwardDirection;
 T3DVec3 SunDirection = {{-1.0f, 1.0f, 1.0f}};
-color_t TimeColors[3] = {(color_t){0x94, 0xC4, 0xF2, 0xFF}, (color_t){0x45, 0x4A, 0x73, 0xFF}, (color_t){0x0A, 0x09, 0x13, 0xFF}};
+color_t SkyColors[3] = {(color_t){0x94, 0xC4, 0xF2, 0xFF}, (color_t){0x45, 0x4A, 0x73, 0xFF}, (color_t){0x0A, 0x09, 0x13, 0xFF}};
 color_t CamModeColor;
 color_t SkyColor = (color_t){0x94, 0xC4, 0xF2, 0xFF};
 uint8_t SunColors[3][4] = {{0xFB, 0xFF, 0xCD, 0xFF}, {0x4E, 0x54, 0x82, 0xFF}, {0x1D, 0x19, 0x36, 0xFF}};
@@ -56,6 +56,7 @@ float RotationSpeed = 0.15f;
 float ModelAngle = 0.0f;
 bool DrawAxisModel = false;
 bool ShowCamMode = false;
+int PreviousTimeColor = 2;
 int CameraMode = 0;
 int DebugMode = 1;
 int TimeColor = 0;
@@ -149,24 +150,28 @@ int main()
         t3d_vec3_add(&CameraForwardTransform.Position, &CamProps.Target, &CamForwardDirection);
 
         // Slowly fade the sky and global light colors to sunset
-        Lerp1DUint8Array(SunColor, SunColors[TimeColor], 4, SkyLerpProgress);
-        LerpColor(&SkyColor, TimeColors[TimeColor], SkyLerpProgress);
-        SkyLerpProgress += 0.005f * DeltaTime;
+        Lerp1DUint8Array(SunColor, SunColors[PreviousTimeColor], SunColors[TimeColor], 4, SkyLerpProgress);
+        LerpColor(&SkyColor, SkyColors[PreviousTimeColor], SkyColors[TimeColor], SkyLerpProgress);
+        SkyLerpProgress += 0.025f * DeltaTime;
 
         if (SkyLerpProgress > 1.0f)
         {
-            SkyLerpProgress = 1.0f;
-        }
-
-        if (FrameCount % 900 == 0 && FrameCount > 1)
-        {
+            PreviousTimeColor++;
             SkyLerpProgress = 0.0f;
             TimeColor++;
             
-            if (TimeColor > 2) TimeColor = 0;
+            if (TimeColor > 2)
+            {
+                PreviousTimeColor = 2;
+                TimeColor = 0;
+            }
+            else if (PreviousTimeColor > 2)
+            {
+                PreviousTimeColor = 0;
+            }
         }
 
-        DebugPrint("Sky color is %C but it should be %C || Change factor -> %f\n", ALL, SkyColor, TimeColors[TimeColor], SkyLerpProgress);
+        DebugPrint("Current: %C || Target: %C || Time value: %f\n", ALL, SkyColor, SkyColors[TimeColor], SkyLerpProgress);
 
         // Read input from controller port 1 into a buffer
         GetControllerInput(&Input, JOYPAD_PORT_1);

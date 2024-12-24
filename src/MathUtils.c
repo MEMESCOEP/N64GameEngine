@@ -196,17 +196,24 @@ uint8_t LerpUint8(int A, int B, float Time)
     return (uint8_t)(A + (B - A) * Time);
 }
 
+// Change A -> B over time
+float LerpFloat(float A, float B, float Time)
+{
+    return A + (B - A) * Time;
+}
+
 // Change each index of a 1-dimensional uint8_t array to the end result over time
-void Lerp1DUint8Array(uint8_t ArrayToLerp[], uint8_t EndArray[], int ArraySize, float Time)
+void Lerp1DUint8Array(uint8_t ArrayToLerp[], uint8_t InitialArray[], uint8_t TargetArray[], int ArraySize, float Time)
 {
     for (int ArrayIndex = 0; ArrayIndex < ArraySize; ArrayIndex++)
     {
-        ArrayToLerp[ArrayIndex] = LerpUint8(ArrayToLerp[ArrayIndex], EndArray[ArrayIndex], Time);
+        ArrayToLerp[ArrayIndex] = LerpUint8(InitialArray[ArrayIndex], TargetArray[ArrayIndex], Time);
     }
 }
 
 // Change A -> B over time
 int LerpInt(int A, int B, float Time)
 {
-    return (int)(A + (B - A) * Time);
+    //return (int)(A + (B - A) * Time);
+    return (int)LerpFloat(A, B, Time);
 }

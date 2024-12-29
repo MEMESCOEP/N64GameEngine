@@ -1,6 +1,14 @@
 {
     "files.associations": {
         "n64gameengine.h": "c",
-        "assert.h": "c"
+        "assert.h": "c",
+        "colorutils.h": "c",
+        "string.h": "c",
+        "textutils.h": "c",
+        "mathutils.h": "c",
+        "chrono": "c",
+        "executor": "c",
+        "random": "c",
+        "regex": "c"
     }
 }

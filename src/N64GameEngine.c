@@ -45,6 +45,7 @@ float DeltaTime = 0.0f;
 float TargetFPS = 60;
 float FPS = 0;
 bool DebugIsInitialized = false;
+bool ShowMemoryWarnings = true;
 bool VerifyEnoughMemory = true;
 int FrameCount = 0;
 
@@ -157,13 +158,22 @@ void DebugPrint(char* Message, enum EngineDebugModes DebugMode, ...)
 }
 
 // ----- Engine functions -----
-// Stops the game and throws an error if there isn't enough memory to keep the console from crashing (>= 97.5% used).
+// Stops the game and throws an error if there isn't enough memory to keep the console from crashing (>= 95% used). A warning
+// will be printed to the console if the memory usage >= 75% and if memory warnings are enabled (ShowMemoryWarnings = true).
 void CheckAvailableMemory()
 {
-    if (VerifyEnoughMemory == true && UsedMemPercentage >= 0.975f)
+    if (VerifyEnoughMemory == true)
     {
-        assertf(UsedMemPercentage >= 0.975f, "The console ran out of memory!");
-    }    
+        if (ShowMemoryWarnings == true && UsedMemPercentage >= 0.75f)
+        {
+            DebugPrint("[WARNING] >> Over 75%% of memory is being used (currently at %f%%).\n", MINIMAL, UsedMemPercentage * 100.0f);
+        }
+
+        if (UsedMemPercentage >= 0.95f)
+        {
+            assertf(UsedMemPercentage >= 0.95f, "The console ran out of memory!");
+        }   
+    }
 }
 
 // Initializes the display, debug, timer, rdpq, etc

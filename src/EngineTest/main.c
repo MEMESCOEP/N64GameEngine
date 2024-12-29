@@ -56,10 +56,10 @@ float RotationSpeed = 0.15f;
 float ModelAngle = 0.0f;
 bool DrawAxisModel = false;
 bool ShowCamMode = false;
-int PreviousTimeColor = 2;
+int PreviousTimeColor = 0;
 int CameraMode = 0;
 int DebugMode = 1;
-int TimeColor = 0;
+int TimeColor = 1;
 
 
 /* FUNCTIONS */
@@ -73,7 +73,6 @@ int main()
     InitSystem(RESOLUTION_320x240, DEPTH_16_BPP, 2, FILTERS_RESAMPLE_ANTIALIAS, true);
 
     debugf("\n[== N64 Game Engine Test Scene ==]\n");
-    DebugPrint("[INFO] >> Converting installed memory amount to KB...\n", MINIMAL);
     InstalledMemoryKB = HeapStats.total / 1024.0f;
 
     DebugPrint("[INFO] >> Registering fonts...\n", MINIMAL);

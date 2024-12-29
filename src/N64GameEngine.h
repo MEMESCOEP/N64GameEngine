@@ -84,6 +84,8 @@ extern float DeltaTime;
 extern float TargetFPS;
 extern float FOV3D;
 extern float FPS;
+extern bool ShowMemoryWarnings;
+extern bool VerifyEnoughMemory;
 extern int FrameCount;
 
 
